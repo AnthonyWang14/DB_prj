@@ -67,9 +67,9 @@ public:
 		}
 	}
 
-	void writeAttr(string str, int length, BufType& attrPointer) {
+	void writeAttr(string str, BufType& attrPointer) {
 		cout << str << endl;
-		for (int i=0; i<length; i++) {
+		for (int i=0; i<str.length(); i++) {
 			*(attrPointer) = (unsigned int)str[i];
 			attrPointer++;
 		}
@@ -84,18 +84,18 @@ public:
 		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
 		//每条记录长度
 		int recordLength   = b[0];
-		cout << recordLength << endl;
+		cout << "recordLength " << recordLength << endl;
 		//总页数
 		int pageNum        = b[1];
-		cout << pageNum << endl;
+		cout << "pageNum " <<  pageNum << endl;
 		//总共记录条数(包括已经删除的)
 		int recordNum = b[2];
-		cout << recordNum << endl;
+		cout << "recordNum " << recordNum << endl;
 
 		BufType pageRecordNum;
 		pageRecordNum = b+3;
 		int flag;
-		for (int i = 0; i < pageNum; i++) {
+		for (int i = 1; i < pageNum; i++) {
 			if (pageRecordNum[i] < RECORD_NUM) {
 				flag = i;
 				break;
@@ -110,9 +110,11 @@ public:
 
 		map<string,string>::iterator it;
 		for (it=newRecord.begin(); it!=newRecord.end(); ++it) {
-			writeAttr((it->first), (it->first).length(), attrPointer);
-			writeAttr((it->second), (it->first).length(), attrPointer);
+			writeAttr((it->first), attrPointer);
+			writeAttr((it->second), attrPointer);
 		}
+		writeAttr("\r\n",  attrPointer);
+			
 		//总记录数增加
 		b[2]++;
 		//该页记录数增加

@@ -32,21 +32,34 @@ void init() {
 }
 
 int main() {
-	init();
+	//init();
   	FileManager* fm = new FileManager();
-	fm->createFile("testfile.txt"); //新建文件
+	//fm->createFile("testfile.txt"); //新建文件
 	int fileID;
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 
 	map<string, string> whsb;
-	whsb["sex"] = "manasdfasdf";
+	whsb["sex"] = "manasdasd";
 	whsb["age"] = "11";
-	whsb["length"] = "3";
+	whsb["length"] = "10";
 	RecordManager* test = new RecordManager(fm);
 	test->insertRecord(fileID, whsb);
-	test->insertRecord(fileID, whsb);
+	//test->insertRecord(fileID, whsb);
+	
+		BufPageManager* bufPageManager = new BufPageManager(fm);
+		int index;
+		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
+		//每条记录长度
+		int recordLength   = b[0];
+		cout << "recordLength " << recordLength << endl;
+		//总页数
+		int pageNum        = b[1];
+		cout << "pageNum " <<  pageNum << endl;
+		//总共记录条数(包括已经删除的)
+		int recordNum = b[2];
+		cout << "recordNum " << recordNum << endl;
 
-	test->printAllRecord(fileID);
+	//test->printAllRecord(fileID);
 	// for (int pageID = 0; pageID < 1000; ++ pageID) {
 	// 	int index;
 	// 	//为pageID获取一个缓存页
@@ -61,5 +74,6 @@ int main() {
 	// 	cout << b[0] << endl; 		//读取缓存页中第一个整数
 	// 	bpm->access(index); //标记访问
 	// }
+	
 	return 0;
 }
