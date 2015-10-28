@@ -21,15 +21,18 @@ void init() {
 	int index;
 	BufType b = bpm->allocPage(fileID, 0, index, true);
 	b[0] = 256;
-	b[1] = 10;
+	b[1] = 100;
 	b[2] = 0;
+	for (int i = 0; i < b[1]; i++) {
+		b[i+3] = 0;
+	}
 	bpm->markDirty(index);
 	fm->writePage(fileID, 0, b, 0);
 	bpm->close();
 }
 
 int main() {
-	// init();
+	init();
   	FileManager* fm = new FileManager();
 	fm->createFile("testfile.txt"); //新建文件
 	int fileID;
@@ -43,6 +46,7 @@ int main() {
 	test->insertRecord(fileID, whsb);
 	test->insertRecord(fileID, whsb);
 
+	test->printAllRecord(fileID);
 	// for (int pageID = 0; pageID < 1000; ++ pageID) {
 	// 	int index;
 	// 	//为pageID获取一个缓存页
