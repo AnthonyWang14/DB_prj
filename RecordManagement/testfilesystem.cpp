@@ -10,6 +10,9 @@
 #include "utils/pagedef.h"
 #include <iostream>
 #include <map>
+#include <vector>
+
+using namespace std;
 
 void init() {
 	FileManager* fm = new FileManager();
@@ -32,22 +35,38 @@ void init() {
 	bpm->close();
 }
 
-int main() {
-	init();
-  	FileManager* fm = new FileManager();
+void test_create_table() {
 	int fileID;
+	FileManager* fm = new FileManager();
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
-
-	map<string, string> testRecord;
-	testRecord["sex"] = "newman10";
-	testRecord["age"] = "3asd";
-	testRecord["length"] = "1223";
 	RecordManager* test = new RecordManager(fm);
-	test->insertRecord(fileID, testRecord);
-	test->dropRecord(fileID, 0);
-	test->updateRecord(fileID,0, testRecord);
-	test->findRecord(fileID, testRecord);
-	test->printAllRecord(fileID);
+	int attr_num = 3;
+	int attr_len[9] = {1, 10, 1, 0, 25, 1, 0, 1, 1};
+	int primary_key = 0;
+	vector<string> attr_name;
+	attr_name.push_back("id");
+	attr_name.push_back("name");
+	attr_name.push_back("gender");
+	test->init(attr_num, attr_len, primary_key, attr_name);
+	test->load_table_info();
+}
+
+int main() {
+	test_create_table();
+	// init();
+	// int fileID;
+	// fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+
+	// map<string, string> testRecord;
+	// testRecord["sex"] = "newman10";
+	// testRecord["age"] = "3asd";
+	// testRecord["length"] = "1223";
+	// RecordManager* test = new RecordManager(fm);
+	// test->insertRecord(fileID, testRecord);
+	// test->dropRecord(fileID, 0);
+	// test->updateRecord(fileID,0, testRecord);
+	// test->findRecord(fileID, testRecord);
+	// test->printAllRecord(fileID);
 	
 	return 0;
 }

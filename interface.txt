@@ -1,0 +1,26 @@
+1. Insert a record into a page
+
+   int insertRecord(int fileID, list<string> newRecord)
+   return 0 : success
+   return 1 : fail
+
+2. drop a record from a page
+
+   int dropRecord(int fileID, int RID) 
+   return 0 : success
+   return 1 : fail
+
+3. find a attribute from a page
+
+   list<string> findAttr(int fileID, string attrName)
+   return null : the attrName doesn't exist 	
+   return list<string> : attrValue + " " + RID
+
+4. update a record of a page
+
+   int updateRecord(int fileID, int RID, string attrName, string attrValue) 
+   return 0 : success
+   return 1 : fail
+
+5. create table 传给RecordManager的初始化参数
+void init(int attr_num, int* attr_info, int primary_key, vector<string> attr_name) 

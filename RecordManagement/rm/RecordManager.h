@@ -8,6 +8,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <map>
+#include <list>
+#include <vector>
+#include "../bufmanager/BufPageManager.h"
+
 using namespace std;
 
 class RecordManager {
@@ -15,12 +19,115 @@ private:
 	int RIDnumber;
 	FileManager* fileManager;
 	BufPageManager* bufPageManager;
+
 public:
 	/*
 	 * RecordManager构造函数
 	 */
 	RecordManager(FileManager* f) {
 		fileManager = f;
+	}
+
+	// 把首页信息读入
+	void load_table_info() {
+		cout << "显示表信息*****************" << endl;
+		BufPageManager* bpm = new BufPageManager(fileManager);
+		fileManager->createFile("testfile.txt"); //新建文件
+		int fileID;
+		fileManager->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+		int index;
+		BufType b = bpm->allocPage(fileID, 0, index, true);
+
+		cout << "每条记录长度 " 	<< b[0] << endl;
+		cout << "总页数 "		<< b[1] << endl;
+		cout << "每页记录个数 " 	<< b[2] << endl;
+		cout << "已有记录条数 "	<< b[3] << endl;
+		cout << "属性个数 "		<< b[b[1] + 4] << endl;
+		int attr_num = b[b[1]+4];
+		for (int i = 0; i < attr_num; i++) {
+			int attr_type = b[b[1]+5+3*i];
+			int attr_len = b[b[1]+5+3*i+1];
+			int attr_null = b[b[1]+5+3*i+2];
+			cout << "第" << i << "个属性" << endl;
+			cout << "类型 " << attr_type << endl;
+			cout << "长度 " << attr_len << endl;
+			cout << "是否为空 " << attr_null << endl;
+		}
+		cout << "主键 " << b[b[1]+5+3*attr_num] << endl;
+		char* attr_name = (char *)(b+b[1]+6+3*attr_num);
+		for (int i = 0; i < attr_num; i++) {
+			// int attr_name_len = strlen(attr_name);
+			// char* temp;
+			// sscanf(attr_name, "%s", temp);
+			// printf("%s\n", temp);
+			while (*attr_name != '\0') {
+				printf("%c", *attr_name);
+				attr_name += 1;
+			}
+			printf("\n");
+		}
+	}
+
+	void init(int attr_num, int* attr_info, int primary_key, vector<string> attr_name) {
+		BufPageManager* bpm = new BufPageManager(fileManager);
+		fileManager->createFile("testfile.txt"); //新建文件
+		int fileID;
+		fileManager->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+
+		int index;
+		BufType b = bpm->allocPage(fileID, 0, index, true);
+		// 每条记录长度
+		b[0] = 0;
+		int record_len = 0;
+		// 总页数
+		b[1] = 100;
+		// 每页的记录数，根据每条记录长度来计算
+		b[2] = 256;
+		// 总记录条数
+		b[3] = 0;
+		BufType record_ptr = b+4;
+		for (int i = 0; i < b[1]; i++) {
+			record_ptr[i] = 0; 
+		}
+
+		int int_size = sizeof(int);
+		int char_size = sizeof(char);
+		cout << "int size" << int_size << endl;
+		cout << "char size" << char_size << endl;
+		// b[b[1] + 3] = attr_num;
+		BufType attr_ptr = b+b[1]+4;
+		attr_ptr[0] = attr_num;
+		for (int i = 0; i < attr_num; i++) {
+			int attr_type = attr_info[3*i];
+			int attr_len = attr_info[3*i+1];
+			int attr_null = attr_info[3*i+2];
+			attr_ptr[1+3*i] = attr_type;
+			attr_ptr[2+3*i] = attr_len;
+			attr_ptr[3+3*i] = attr_null;
+			// b[b[1]+4+3*i] = attr_type;
+			// b[b[1]+4+3*i+1] = attr_len;
+			// b[b[1]+4+3*i+2] = attr_null;
+			cout << attr_len << endl;
+			record_len += (attr_type) ? attr_len : (attr_len/(int_size/char_size)+1);
+		}
+		b[0] = record_len;
+		b[2] = 8000/(record_len*int_size);
+		b[b[1]+5+3*attr_num] = primary_key;
+		char* attr_name_str = (char *)(b+b[1]+5+3*attr_num+1);
+		for (int i = 0; i < attr_num; i++) {
+			string name = attr_name[i];
+			int len = name.length();
+			name.copy(attr_name_str, len, 0); 
+			*(attr_name_str+len+1) = '\0';
+			attr_name_str += (len+1);
+		}
+		cout << "每条记录长度" << b[0] << endl;
+		cout << "总页数" << b[1] << endl;
+		cout << "每页的记录数" << b[2] << endl;
+
+		bpm->markDirty(index);
+		fileManager->writePage(fileID, 0, b, 0);
+		bpm->close();
 	}
 
 	//打印一条记录
@@ -242,7 +349,7 @@ public:
 		return 1;
 	}
 
-	
+
 	int findRecord(int fileID, map<string, string> condition) {
 		int index;
 		bufPageManager = new BufPageManager(fileManager);
@@ -264,14 +371,12 @@ public:
 					return 0;
 				//输出
 				}
-
 			 }
 		} 
 		cout << "Not Found!" << endl;
 		return 0;
 	}
 
-	
 };
 	
 #endif
