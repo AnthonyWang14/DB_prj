@@ -47,12 +47,30 @@ void test_create_table() {
 	attr_name.push_back("id");
 	attr_name.push_back("name");
 	attr_name.push_back("gender");
-	test->init(attr_num, attr_len, primary_key, attr_name);
-	test->load_table_info();
+	test->init(fileID, attr_num, attr_len, primary_key, attr_name);
+}
+
+void test_insert_record() {
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+	RecordManager* test = new RecordManager(fm);
+	test->load_table_info(fileID);
+	vector<string> newRecord;
+	newRecord.push_back("106001");
+	newRecord.push_back("'CHAD CABELLO'");
+	newRecord.push_back("'F'");
+	test->insert_record(fileID, newRecord);
+	test->insert_record(fileID, newRecord);	
+	// for (int i = 0; i < 300; i++) {
+	// 	test->insert_record(fileID, newRecord);
+	// }
+	test->print_all_record(fileID);
 }
 
 int main() {
 	test_create_table();
+	test_insert_record();
 	// init();
 	// int fileID;
 	// fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id

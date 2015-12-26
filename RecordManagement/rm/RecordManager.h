@@ -17,6 +17,17 @@ using namespace std;
 class RecordManager {
 private:
 	int RIDnumber;
+	int record_len;
+	int total_pages;
+	int record_per_page;
+	int attr_num;
+	vector<string> str_vec;
+	// vector<int> record_used_per_page;
+	// 关于各种属性的参数
+	vector<int> attr_lens;
+	vector<int> attr_types;
+	vector<int> attr_nulls;
+	vector<int> attr_pos;
 	FileManager* fileManager;
 	BufPageManager* bufPageManager;
 
@@ -29,56 +40,74 @@ public:
 	}
 
 	// 把首页信息读入
-	void load_table_info() {
+	void load_table_info(int fileID) {
 		cout << "显示表信息*****************" << endl;
 		BufPageManager* bpm = new BufPageManager(fileManager);
-		fileManager->createFile("testfile.txt"); //新建文件
-		int fileID;
-		fileManager->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 		int index;
 		BufType b = bpm->allocPage(fileID, 0, index, true);
+
+		record_len = b[0];
+		total_pages = b[1];
+		record_per_page = b[2];
+		RIDnumber = b[3];
 
 		cout << "每条记录长度 " 	<< b[0] << endl;
 		cout << "总页数 "		<< b[1] << endl;
 		cout << "每页记录个数 " 	<< b[2] << endl;
-		cout << "已有记录条数 "	<< b[3] << endl;
+		cout << "RID(记录个数) "	<< b[3] << endl;
+		BufType record_ptr = b+4;
+		// for (int i = 0; i < b[1]; i++) {
+		// 	record_used_per_page.push_back(record_ptr[i]);
+		// }
+
 		cout << "属性个数 "		<< b[b[1] + 4] << endl;
-		int attr_num = b[b[1]+4];
+
+		attr_num = b[b[1]+4];
 		for (int i = 0; i < attr_num; i++) {
 			int attr_type = b[b[1]+5+3*i];
 			int attr_len = b[b[1]+5+3*i+1];
 			int attr_null = b[b[1]+5+3*i+2];
+			attr_types.push_back(attr_type);
+			attr_lens.push_back(attr_len);
+			attr_nulls.push_back(attr_null);
 			cout << "第" << i << "个属性" << endl;
 			cout << "类型 " << attr_type << endl;
 			cout << "长度 " << attr_len << endl;
 			cout << "是否为空 " << attr_null << endl;
+			attr_pos.push_back((attr_type) ? (attr_len+1) : ((attr_len+1)/4+1));
 		}
 		cout << "主键 " << b[b[1]+5+3*attr_num] << endl;
 		char* attr_name = (char *)(b+b[1]+6+3*attr_num);
+
 		for (int i = 0; i < attr_num; i++) {
 			// int attr_name_len = strlen(attr_name);
 			// char* temp;
 			// sscanf(attr_name, "%s", temp);
 			// printf("%s\n", temp);
+			string temp = "";
 			while (*attr_name != '\0') {
-				printf("%c", *attr_name);
-				attr_name += 1;
+				temp += *(attr_name++);
+				// printf("%c", *(attr_name++));
 			}
-			printf("\n");
+			attr_name++;
+			str_vec.push_back(temp);
+			cout << temp << endl;
 		}
+		cout << "表信息显示完毕*************" << endl;
 	}
 
-	void init(int attr_num, int* attr_info, int primary_key, vector<string> attr_name) {
+	void init(int fileID, int attr_num, int* attr_info, int primary_key, vector<string> attr_name) {
 		BufPageManager* bpm = new BufPageManager(fileManager);
-		fileManager->createFile("testfile.txt"); //新建文件
-		int fileID;
-		fileManager->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+		// fileManager->createFile("testfile.txt"); //新建文件
+		// int fileID;
+		// fileManager->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 
 		int index;
 		BufType b = bpm->allocPage(fileID, 0, index, true);
 		// 每条记录长度
 		b[0] = 0;
-		int record_len = 0;
+		//初始记录长度需要有一个RID
+		int record_len = 1;
 		// 总页数
 		b[1] = 100;
 		// 每页的记录数，根据每条记录长度来计算
@@ -108,18 +137,24 @@ public:
 			// b[b[1]+4+3*i+1] = attr_len;
 			// b[b[1]+4+3*i+2] = attr_null;
 			cout << attr_len << endl;
-			record_len += (attr_type) ? attr_len : (attr_len/(int_size/char_size)+1);
+			// attr_pos.push_back((attr_type) ? (attr_len+1) : ((attr_len+1)/(int_size/char_size)+1));
+			record_len += (attr_type) ? (attr_len+1) : ((attr_len+1)/(int_size/char_size)+1);
 		}
+
 		b[0] = record_len;
 		b[2] = 8000/(record_len*int_size);
 		b[b[1]+5+3*attr_num] = primary_key;
 		char* attr_name_str = (char *)(b+b[1]+5+3*attr_num+1);
 		for (int i = 0; i < attr_num; i++) {
 			string name = attr_name[i];
-			int len = name.length();
-			name.copy(attr_name_str, len, 0); 
-			*(attr_name_str+len+1) = '\0';
-			attr_name_str += (len+1);
+			for (int j = 0; j < name.length(); j++) {
+				*(attr_name_str++) = name[j];
+			}
+			*(attr_name_str++) = '\0';
+			// int len = name.length();
+			// name.copy(attr_name_str, len, 0); 
+			// *(attr_name_str+len+1) = '\0';
+			// attr_name_str += (len+1);
 		}
 		cout << "每条记录长度" << b[0] << endl;
 		cout << "总页数" << b[1] << endl;
@@ -188,6 +223,143 @@ public:
 		*(attrPointer) = (unsigned int)'\0';
 		attrPointer++;
 		return;
+	}
+
+	// 写入某个属性（属性编号，具体值的字符串，BufType）
+	// varchar类型的前后会有单引号，只存单引号之间的部分
+	int write_attr(int attr, string record_attr, BufType b) {
+		// cout << record_attr << endl;
+		// 如果输入长度大于要求长度的话则返回1
+		// 分int和varchar判断
+		if (attr_types[attr]==0) {
+			if (record_attr.length()-2 > attr_lens[attr])
+				return 1;
+		}
+		else {
+			if (record_attr.length() > attr_lens[attr])
+				return 1;
+		} 
+		// 如果是字符的话
+		if (attr_types[attr] == 0) {
+			cout << attr_types[attr] << endl;
+			cout << attr_num << endl;
+			char *temp = (char*)b;
+			if (record_attr[0] != '\'') {
+				// cout << "你字符串不对啊！" << record_attr;
+				return 1;
+			}
+			for (int i = 1; i < record_attr.length()-1; i++) {
+				temp[i-1] = (char)record_attr[i];
+			}
+			temp[record_attr.length()-2] = '\0';
+			return 0;
+		}
+		// int
+		else {
+			int *temp = (int *)b;
+			for (int i = 0; i < record_attr.length(); i++) {
+				temp[i] = int(record_attr[i]-'0');
+			}
+			temp[record_attr.length()] = -1;
+			return 0;
+		}
+	}
+
+	int print_all_record(int fileID) {
+		bufPageManager = new BufPageManager(fileManager);
+		int index;
+		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
+		//每条记录长度
+		int recordLength   = b[0];
+		cout << "recordLength: " << recordLength << endl;
+		//总页数
+		int pageNum        = b[1];
+		cout << "pageNum: " << pageNum << endl;
+		//总共记录条数(包括已经删除的)
+		int recordNum = b[3];
+		cout << "RID: " << recordNum << endl;
+
+		//缓存了所有页面record条数
+		BufType pageRecordNum;
+		pageRecordNum = b+4;
+		for (int pageID = 1; pageID < pageNum; pageID++) {
+			if (!pageRecordNum[pageID]) continue;
+			cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
+			cout << endl;
+			int index_this;
+			BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
+			for (int i = 0; i < pageRecordNum[pageID]; i++) {
+			 	BufType oneRecordPointer = b2 + i * recordLength;
+			 	print_one_record(oneRecordPointer);
+				cout << endl;
+			}
+		}	
+		return 0;
+	}
+
+	int print_one_record(BufType record_ptr) {
+		cout << "RID" << *(record_ptr++) << endl;
+		for (int i = 0; i < attr_num; i++) {
+			cout << str_vec[i] << endl;
+			if (attr_types[i] == 0) {
+				char* temp = (char*)record_ptr; 
+				char c = *(temp++);
+				while (c!='\0') {
+					cout << c;
+					c = *(temp++);
+				}
+				cout << endl;
+			}
+			else {
+				int* temp = (int*)record_ptr;
+				int ii = *(temp++);
+				while (ii != -1) {
+					cout << ii;
+					ii = *(temp++);
+				}
+				cout << endl;
+			}
+			record_ptr += attr_pos[i];				
+		}
+		return 0;
+	}
+
+	//每条记录第一个位置要是RID
+	int insert_record(int fileID, vector<string> newRecord) {
+		bufPageManager = new BufPageManager(fileManager);
+		int index;
+		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
+		
+		BufType pageRecordNum;
+		pageRecordNum = b+4;
+		int flag;
+		for (int i = 1; i < total_pages; i++) {
+			if (pageRecordNum[i] < record_per_page) {
+				flag = i;
+				break;
+			}
+		}
+		// cout << "insert test" << endl;
+		int index2;
+		BufType b2 = bufPageManager->allocPage(fileID, flag, index2, true);
+		//找到flag页接下来要插入的记录头指针
+		BufType oneRecordPointer = b2 + pageRecordNum[flag] * record_len;
+		*(oneRecordPointer++) = b[3];	//Rid
+		for (int i = 0; i < attr_num; i++) {
+			int result = write_attr(i, newRecord[i], oneRecordPointer);
+			if (result != 0)
+				return 1;
+			else 
+				oneRecordPointer += attr_pos[i];
+		}
+		//总RID数增加
+		b[3]++;
+		//该页记录数增加
+		pageRecordNum[flag]++;
+		bufPageManager->markDirty(index);
+		bufPageManager->markDirty(index2);
+		bufPageManager->close();
+		return 0;
 	}
 
 	int insertRecord(int fileID, map<string, string> newRecord) {
