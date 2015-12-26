@@ -297,6 +297,51 @@ public:
 		return 0;
 	}
 
+	int delete_record(int fileID, int RID) {
+		int index;
+		bufPageManager = new BufPageManager(fileManager);
+		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
+		//总页数
+		int recordLength   = b[0];
+		int pageNum        = b[1];
+		cout << "pageNum " <<  pageNum << endl;
+		int index_this;
+		
+		BufType pageRecordNum;
+		pageRecordNum = b+4;
+		int flag = 0;
+		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
+			 if (flag) break;
+			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
+			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
+			 	BufType oneRecordPointer = b2 + i * recordLength;
+				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
+					cout << "catch you!!" <<endl;
+					pageRecordNum[pageID]--;
+					b[2]--;
+					if (i == (pageRecordNum[pageID]-1)) { //该记录为这一页的最后一条记录,将其删除
+						//nothing need to do
+					}
+					else {                                //该记录不是最后一条，用最后一条将其替代
+						BufType endRecordPointer = b2 + (pageRecordNum[pageID]) * recordLength;
+						for (int j=0; j<recordLength; j++)
+							*(oneRecordPointer+j) = *(endRecordPointer+j);
+					}
+					flag = 1;
+					break;
+				}
+			 }
+		}
+
+		bufPageManager->markDirty(index);
+		bufPageManager->markDirty(index_this);
+		bufPageManager->close();	
+		if (flag)
+			return 0;
+		else
+			return 1;
+	}
+
 	int print_one_record(BufType record_ptr) {
 		cout << "RID" << *(record_ptr++) << endl;
 		for (int i = 0; i < attr_num; i++) {

@@ -68,9 +68,28 @@ void test_insert_record() {
 	test->print_all_record(fileID);
 }
 
+void test_delete_record() {
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+	RecordManager* test = new RecordManager(fm);
+	test->load_table_info(fileID);
+	vector<string> newRecord;
+	newRecord.push_back("106001");
+	newRecord.push_back("'CHAD CABELLO'");
+	newRecord.push_back("'F'");
+	test->delete_record(fileID, 1);
+	test->insert_record(fileID, newRecord);	
+	// for (int i = 0; i < 300; i++) {
+	// 	test->insert_record(fileID, newRecord);
+	// }
+	test->print_all_record(fileID);
+
+}
 int main() {
 	test_create_table();
 	test_insert_record();
+	test_delete_record();
 	// init();
 	// int fileID;
 	// fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
