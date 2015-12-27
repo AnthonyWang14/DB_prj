@@ -12,7 +12,7 @@ lex.yy.o: lex.yy.c  yacc.tab.h  main.h
 yacc.tab.o: yacc.tab.c  main.h  
 	$(CC) -c yacc.tab.c  
   
-yacc.tab.c  yacc.tab.h: yacc.y  
+yacc.tab.c  yacc.tab.h: yacc.y
 	$(YACC) -d yacc.y  
   
 lex.yy.c: lex.l  

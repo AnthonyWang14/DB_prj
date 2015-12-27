@@ -87,10 +87,10 @@
 int a;
 string type;
 string dbName;
-string tbName;
+string tbName; 
 string setName;
 string primaryKey;
-string currentDb = "";
+string currentDb = "orderDB";
 vector<string>  attrNameList;
 vector<string>  tbNameList;
 vector<string> 	attrTypeList;
@@ -5152,6 +5152,7 @@ void deleteFrom() {
 	}  
 	string temp0 = "/";
 	string temp1 = ".txt";
+	string temp2 = "'";
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
 	if((access(path.c_str(),F_OK)))
 	{
@@ -5159,15 +5160,213 @@ void deleteFrom() {
 		return;
 	}
 
-	for (int i=0; i<clauseOpList.size(); i++) {
-		cout << clauseNameList[i] << " " << clauseOpList[i] << " " << clauseRightList[i] << endl;
-	}
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
 	
+	cout << "-----------------" << endl;
+	vector<vector<string> > record = rm->get_all_record();
+	
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();
+	for (int i=0; i<type.size(); i++) {
+		cout << type[i] << " ";
+	}
+	cout << endl;
+	vector<int> clauseLeft, clauseRight;
+	clauseLeft.clear();
+	clauseRight.clear();
+	int flag;
+	for (int i=0; i<clauseNameList.size(); i++) {
+		flag = 0;
+		for (int j=0; j<attr.size(); j++)
+			if (attr[j] == clauseNameList[i]) {
+				flag = j+1;
+				break;
+			}
+		if (flag == 0) {
+			printf("attrName %s doesn't exist.. \n", clauseNameList[i].c_str());
+			return;	
+		}
+		clauseLeft.push_back(flag);
+		flag = 0;
+		if (clauseRightList[i][0] == '\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
+			clauseRight.push_back(0);
+			continue;
+		}
+		for (int j=0; j<attr.size(); j++)
+			if (attr[j] == clauseRightList[i]) {
+				flag = j+1;
+				break;
+			}
+		if (flag == 0) {
+			printf("attrName %s doesn't exist.. \n", clauseRightList[i].c_str());
+			return;	
+		}
+		clauseRight.push_back(flag);
+	}
+
+	for (int i=0; i< clauseLeft.size(); i++) cout << clauseLeft[i] << " ";
+	cout << endl;
+	for (int i=0; i< clauseRight.size(); i++) cout << clauseRight[i] << " ";
+	cout << endl;
+	for (int j=0; j<clauseOpList.size(); j++) cout << clauseOpList[j] << " ";
+	cout << endl;
+
+	for (int j=0; j<clauseOpList.size(); j++) cout << clauseRightList[j] << " ";
+	cout << endl;
+	flag = 0;
+	vector<string> delList;
+	delList.clear();
+	string temp = "";
+	for (int i=0; i<record.size(); i++) { 
+		flag = 0;
+		for (int j=0; j<clauseOpList.size(); j++) {		
+			if (clauseOpList[j] == "=") {
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
+					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]==0 && clauseRightList[j][0]=='\'') {
+					temp = temp2+record[i][clauseLeft[j]]+temp2;
+					if (temp != clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (record[i][clauseLeft[j]] != clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+				
+			}
+			if (clauseOpList[j] == ">") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) <= atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) <= atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "<") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) >= atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) >= atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == ">=") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) < atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) < atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "<=") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) > atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) > atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "!=") {
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
+					if (record[i][clauseLeft[j]] == record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					} 
+				} else
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]==0 && clauseRightList[j][0]=='\'') {
+					temp = temp2+record[i][clauseLeft[j]]+temp2;
+					if (temp == clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (record[i][clauseLeft[j]] == record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (record[i][clauseLeft[j]] == clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+		}
+		if (flag == 0) {
+			delList.push_back(record[i][0]);
+			cout << i << " " << record[i][0] << endl;
+		}	
+	}
+	for (int i=0; i<delList.size(); i++) 
+		rm->delete_record(fileID, atoi(delList[i].c_str()));
+	rm->print_all_record(); 
 }
 
 void updateSet() {
 	cout << "updateSet" << endl;
-}
+} 
 
 void selectFrom() {
 	cout << "selectFrom" << endl;
@@ -5260,17 +5459,17 @@ int main()
 			for (int j=0; j<attrValueList[i].size(); j++)
 				cout << attrValueList[i][j] << " ";
 			cout << endl;
-		}
+		} 
 
 		cout << "attrNameList:";  
     		for (iter=attrNameList.begin();iter!=attrNameList.end();iter++)  
-        		cout << " " << *iter;  
+        		cout << " " << *iter;   
 		cout << endl;
 		cout << "tbNameList:";  
 		for (iter=tbNameList.begin();iter!=tbNameList.end();iter++)  
         		cout << " " << *iter;  
-		cout << endl;
-		cout << "attrTypeList:";  
+		cout << endl; 
+		cout << "attrTypeList:";   
 		for (iter=attrTypeList.begin();iter!=attrTypeList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;

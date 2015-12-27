@@ -11,7 +11,7 @@
  */
 
 #define MAX_PATH 100
-#define DB_ROOT "database"
+#define DB_ROOT "/home/winsen/Desktop/db/database"
 #define CURRENTDB "currentDb.txt"
 #define ALLDB "allDb.txt"
 #define TABLELIST "tablelist.txt"
