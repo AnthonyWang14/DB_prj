@@ -86,6 +86,7 @@ public:
 			cout << temp << endl;
 		}
 		show_table_info();
+		update_all_record(fileID);
 		// cout << "表信息显示完毕*************" << endl;
 	}
 
@@ -262,7 +263,6 @@ public:
 			}
 			for (int i = 0; i < all_record.size(); i++) {
 				if (all_record[i][attr+1] == w) {
-					cout << w << endl;
 					cout << "主键重复" << endl;
 					return 1;
 				}
@@ -474,13 +474,10 @@ public:
 		}
 		bufPageManager->markDirty(index_this);
 		bufPageManager->close();		
+		update_all_record(fileID);	
 		return 0;
 	}
 
-	vector<string> get_all_attr_name() {
-		return str_vec;
-	}
-	
 	int print_one_record(BufType record_ptr) {
 		cout << "RID" << *(record_ptr++) << endl;
 		for (int i = 0; i < attr_num; i++) {
