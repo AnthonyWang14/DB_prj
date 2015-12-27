@@ -23,6 +23,7 @@ private:
 	int record_per_page;
 	int attr_num;
 	int primary_key;
+	int first_pageID;
 	vector<string> str_vec;
 	// vector<int> record_used_per_page;
 	// 关于各种属性的参数
@@ -53,6 +54,7 @@ public:
 		record_per_page = b[2];
 		RIDnumber = b[3];
 		BufType record_ptr = b+4;
+		first_pageID = 1;
 		// for (int i = 0; i < b[1]; i++) {
 		// 	record_used_per_page.push_back(record_ptr[i]);
 		// }
@@ -111,7 +113,6 @@ public:
 			else
 				cout << "NULL" << endl;
 		}
-
 		cout << "***************表显示完毕***************" << endl;
 	}
   
@@ -129,7 +130,7 @@ public:
 		//初始记录长度需要有一个RID
 		int record_len = 1;
 		// 总页数
-		b[1] = 100;
+		b[1] = 200;
 		// 每页的记录数，根据每条记录长度来计算
 		b[2] = 256;
 		// 总记录条数
@@ -220,7 +221,7 @@ public:
 		//缓存了所有页面record条数
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
-		for (int pageID = 1; pageID < pageNum; pageID++) {
+		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) {
 			if (!pageRecordNum[pageID]) continue;
 			cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
 			cout << endl;
@@ -326,7 +327,7 @@ public:
 		//缓存了所有页面record条数
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
-		for (int pageID = 1; pageID < pageNum; pageID++) {
+		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) {
 			if (!pageRecordNum[pageID]) continue;
 			cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
 			cout << endl;
@@ -363,55 +364,12 @@ public:
 	vector<string> get_attr_name() {
 		return str_vec;
 	}
-	
+
+	vector<int> get_attr_type() {
+		return attr_types;
+	}
 	vector< vector<string> > get_all_record() {
 		return all_record;
-	}
-
-	int delete_record(int fileID, int RID) {
-		int index;
-		bufPageManager = new BufPageManager(fileManager);
-		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
-		//总页数
-		int recordLength   = b[0];
-		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
-		int index_this;
-		
-		BufType pageRecordNum;
-		pageRecordNum = b+4;
-		int flag = 0;
-		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
-			 if (flag) break;
-			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
-			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
-			 	BufType oneRecordPointer = b2 + i * recordLength;
-				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
-					cout << "catch you!!" <<endl;
-					pageRecordNum[pageID]--;
-					b[2]--;
-					if (i == (pageRecordNum[pageID]-1)) { //该记录为这一页的最后一条记录,将其删除
-						//nothing need to do
-					}
-					else {                                //该记录不是最后一条，用最后一条将其替代
-						BufType endRecordPointer = b2 + (pageRecordNum[pageID]) * recordLength;
-						for (int j=0; j<recordLength; j++)
-							*(oneRecordPointer+j) = *(endRecordPointer+j);
-					}
-					flag = 1;
-					break;
-				}
-			 }
-		}
-
-		bufPageManager->markDirty(index);
-		bufPageManager->markDirty(index_this);
-		bufPageManager->close();	
-		update_all_record(fileID);
-		if (flag)
-			return 0;
-		else
-			return 1;
 	}
 
 	int get_attr_key(string attr_key) {
@@ -438,50 +396,7 @@ public:
    		return rtn;
    	}
 
-	int update_record(int fileID, int RID, string attr_key, string attr_value) {
-		int attr_key_index = get_attr_key(attr_key);
-		if (attr_key_index < 0) {
-			cout << "没有key " << attr_key << endl;
-			return 1;
-		}
-		int index;
-		bufPageManager = new BufPageManager(fileManager);
-		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
-		//总页数
-		int recordLength   = b[0];
-		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
-		int index_this;
-		BufType pageRecordNum;
-		pageRecordNum = b+4;
-		int flag = 0;
-		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
-			 if (flag) break;
-			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
-			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
-			 	BufType oneRecordPointer = b2 + i * recordLength;
-				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
-					cout << "catch you!!" <<endl;
-					BufType attrPointer = oneRecordPointer+1;
-					int result = write_attr(attr_key_index, attr_value, attrPointer);
-					flag = 1;
-					if (result == 1) 
-						return result; 
 
-					break;
-					
-				}
-			 }
-		}
-		if (flag == 0) {
-			cout << "没有找到对应RID" << RID << endl;
-			return 1;
-		}
-		bufPageManager->markDirty(index_this);
-		bufPageManager->close();		
-		update_all_record(fileID);	
-		return 0;
-	}
 
 	int print_one_record(BufType record_ptr) {
 		cout << "RID" << *(record_ptr++) << endl;
@@ -586,61 +501,52 @@ public:
 		return 0;
 	}
 
-	int insertRecord(int fileID, map<string, string> newRecord) {
-		bufPageManager = new BufPageManager(fileManager);
+	int update_record(int fileID, int RID, string attr_key, string attr_value) {
+		int attr_key_index = get_attr_key(attr_key);
+		if (attr_key_index < 0) {
+			cout << "没有key " << attr_key << endl;
+			return 1;
+		}
 		int index;
+		bufPageManager = new BufPageManager(fileManager);
 		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
-		//每条记录长度
-		int recordLength   = b[0];
-		cout << "recordLength " << recordLength << endl;
 		//总页数
+		int recordLength   = b[0];
 		int pageNum        = b[1];
 		cout << "pageNum " <<  pageNum << endl;
-		//总共记录条数(包括已经删除的)
-		int recordNum = b[2];
-		cout << "recordNum " << recordNum << endl;
-
+		int index_this;
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
-		int flag;
-		for (int i = 1; i < pageNum; i++) {
-			if (pageRecordNum[i] < RECORD_NUM) {
-				flag = i;
-				break;
-			}
-		}
-		int index2;
-		BufType b2 = bufPageManager->allocPage(fileID, flag, index2, true);
-		BufType oneRecordPointer = b2 + pageRecordNum[flag] * recordLength;
-		*(oneRecordPointer++) = b[3];	//Rid
-		*(oneRecordPointer++) = newRecord.size();	//Record size
-		BufType attrPointer = oneRecordPointer;
+		int flag = 0;
+		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) { //枚举每一页
+			 if (flag) break;
+			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
+			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
+			 	BufType oneRecordPointer = b2 + i * recordLength;
+				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
+					cout << "catch you!!" <<endl;
+					BufType attrPointer = oneRecordPointer+1;
+					int result = write_attr(attr_key_index, attr_value, attrPointer);
+					flag = 1;
+					if (result == 1) 
+						return result; 
 
-		map<string,string>::iterator it;
-		for (it=newRecord.begin(); it!=newRecord.end(); ++it) {
-			writeAttr((it->first), attrPointer);
-			writeAttr((it->second), attrPointer);
+					break;
+					
+				}
+			 }
 		}
-		writeAttr("\r\n",  attrPointer);
-			
-		//总记录数增加
-		b[2]++;
-		//总RID数增加
-		b[3]++;
-		//该页记录数增加
-		pageRecordNum[flag]++;
-		
-		cout << index << endl;
-		cout << index2 << endl;
-		bufPageManager->markDirty(index);
-		bufPageManager->markDirty(index2);
-		bufPageManager->close();
-		update_all_record(fileID);
+		if (flag == 0) {
+			cout << "没有找到对应RID" << RID << endl;
+			return 1;
+		}
+		bufPageManager->markDirty(index_this);
+		bufPageManager->close();		
+		update_all_record(fileID);	
 		return 0;
 	}
 
-	int dropRecord(int fileID, int RID) {
-					
+	int delete_record(int fileID, int RID) {
 		int index;
 		bufPageManager = new BufPageManager(fileManager);
 		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
@@ -653,7 +559,7 @@ public:
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
 		int flag = 0;
-		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
+		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) { //枚举每一页
 			 if (flag) break;
 			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
 			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
@@ -672,107 +578,19 @@ public:
 					}
 					flag = 1;
 					break;
-					
 				}
 			 }
 		}
+
 		bufPageManager->markDirty(index);
 		bufPageManager->markDirty(index_this);
-		bufPageManager->close();		
-		return 0;
+		bufPageManager->close();	
+		update_all_record(fileID);
+		if (flag)
+			return 0;
+		else
+			return 1;
 	}
-
-	int updateRecord(int fileID, int RID, map<string, string> newChange) {
-		int index;
-		bufPageManager = new BufPageManager(fileManager);
-		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
-		//总页数
-		int recordLength   = b[0];
-		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
-		int index_this;
-		
-		BufType pageRecordNum;
-		pageRecordNum = b+4;
-		int flag = 0;
-		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
-			 if (flag) break;
-			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
-			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
-			 	BufType oneRecordPointer = b2 + i * recordLength;
-				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
-					cout << "catch you!!" <<endl;
-					BufType attrPointer = oneRecordPointer+2;
-					map<string,string>::iterator it;
-					for (it=newChange.begin(); it!=newChange.end(); ++it) {
-						writeAttr((it->first), attrPointer);
-						writeAttr((it->second), attrPointer);
-					}
-					writeAttr("\r\n",  attrPointer);
-
-					flag = 1;
-					break;
-					
-				}
-			 }
-		}
-		
-		bufPageManager->markDirty(index_this);
-		bufPageManager->close();		
-		return 0;
-	}
-
-	int check(map<string, string> condition, BufType record) {
-		map<string, string> thisRecord;
-		string key, value;
-		BufType attr = record+2; 
-		for (int i = 0; i < record[1]*2; i++) {
-			if (i%2 == 0) {
-				key = "";
-				value = "";
-			}
-			while(char(*attr) != '\0') {
-				if (i%2) value+=char(*attr); else key+=char(*attr);
-				attr++;
-			}
-			attr++;
-			if (i%2 == 1) thisRecord[key] = value;
-		}
-		map<string,string>::iterator it;
-		for (it=thisRecord.begin(); it!=thisRecord.end(); ++it) {
-			if (it->second != condition[it->first]) return 0;
-		}			
-		return 1;
-	}
-
-
-	int findRecord(int fileID, map<string, string> condition) {
-		int index;
-		bufPageManager = new BufPageManager(fileManager);
-		BufType b = bufPageManager->allocPage(fileID, 0, index, true);
-		//总页数
-		int recordLength   = b[0];
-		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
-		int index_this;
-		
-		BufType pageRecordNum;
-		pageRecordNum = b+4;
-		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
-			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
-			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
-			 	BufType oneRecordPointer = b2 + i * recordLength;
-				if ( check(condition, oneRecordPointer) ) {
-					printOneRecord(oneRecordPointer);
-					return 0;
-				//输出
-				}
-			 }
-		} 
-		cout << "Not Found!" << endl;
-		return 0;
-	}
-
 };
 	
 #endif
