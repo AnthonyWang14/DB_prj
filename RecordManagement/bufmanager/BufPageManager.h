@@ -131,7 +131,6 @@ public:
 		if (dirty[index]) {
 			int f, p;
 			hash->getKeys(index, f, p);
-			cout << "haha" << endl;
 			fileManager->writePage(f, p, addr[index], 0);
 			dirty[index] = false;
 		}

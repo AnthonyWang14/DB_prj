@@ -65,7 +65,7 @@ void test_insert_record() {
 	// for (int i = 0; i < 300; i++) {
 	// 	test->insert_record(fileID, newRecord);
 	// }
-	test->print_all_record(fileID);
+	test->print_all_record();
 }
 
 void test_delete_record() {
@@ -83,13 +83,47 @@ void test_delete_record() {
 	// for (int i = 0; i < 300; i++) {
 	// 	test->insert_record(fileID, newRecord);
 	// }
-	test->print_all_record(fileID);
-
+	test->print_all_record();
 }
+
+void test_update_record() {
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+	RecordManager* test = new RecordManager(fm);
+	test->load_table_info(fileID);
+	if (test->update_record(fileID, 2, "heheh", "21331312111")) {
+		cout << "wrong update" << endl;
+	}
+	else {
+		cout << "success update" << endl;
+	}
+	test->print_all_record();
+}
+
+void test_find_attr() {
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
+	RecordManager* test = new RecordManager(fm);
+	test->load_table_info(fileID);
+	vector<string> rtn = test->find_attr(fileID, "hehe");
+	for (int i = 0; i < rtn.size(); i++) {
+		cout << rtn[i] << endl;
+	}	
+
+	vector<string> rtn2 = test->find_attr(fileID, "name");
+	for (int i = 0; i < rtn2.size(); i++) {
+		cout << rtn2[i] << endl;
+	}
+}
+
 int main() {
 	test_create_table();
 	test_insert_record();
-	test_delete_record();
+	// test_find_attr();
+	// test_delete_record();
+	// test_update_record();
 	// init();
 	// int fileID;
 	// fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
