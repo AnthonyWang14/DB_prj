@@ -92,6 +92,8 @@ void test_update_record() {
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 	RecordManager* test = new RecordManager(fm);
 	test->load_table_info(fileID);
+	test->update_record(fileID, 0, "id", "1231231231");
+	test->update_record(fileID, 0, "name", "'wangsu'");
 	if (test->update_record(fileID, 2, "heheh", "21331312111")) {
 		cout << "wrong update" << endl;
 	}
@@ -121,6 +123,7 @@ void test_find_attr() {
 int main() {
 	test_create_table();
 	test_insert_record();
+	test_update_record();
 	// test_find_attr();
 	// test_delete_record();
 	// test_update_record();

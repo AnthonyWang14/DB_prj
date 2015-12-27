@@ -526,11 +526,12 @@ public:
 				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
 					//cout << "catch you!!" <<endl;
 					BufType attrPointer = oneRecordPointer+1;
+					for (int k = 0; k < attr_key_index; k++)
+						attrPointer += attr_pos[k];
 					int result = write_attr(attr_key_index, attr_value, attrPointer);
 					flag = 1;
 					if (result == 1) 
 						return result; 
-
 					break;
 					
 				}
