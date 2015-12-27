@@ -1,6 +1,6 @@
 1. Insert a record into a page
 
-   int insertRecord(int fileID, list<string> newRecord)
+   int insert_record(int fileID, vector<string> newRecord)
    return 0 : success
    return 1 : fail
 
@@ -12,9 +12,9 @@
 
 3. find a attribute from a page
 
-   list<string> findAttr(int fileID, string attrName)
+   vector<string> findAttr(int fileID, string attrName)
    return null : the attrName doesn't exist 	
-   return list<string> : attrValue + " " + RID
+   return vector<string> : RID+arrtValue (偶数数RID， 奇数是attrvalue)
 
 4. update a record of a page
 
