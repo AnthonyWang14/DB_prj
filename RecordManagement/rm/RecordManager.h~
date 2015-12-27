@@ -574,7 +574,7 @@ public:
 						cout << "delete last record" << endl;
 					}
 					else {                                //该记录不是最后一条，用最后一条将其替代
-						BufType endRecordPointer = b2 + (pageRecordNum[pageID]) * recordLength;
+						BufType endRecordPointer = b2 + (pageRecordNum[pageID]-1) * recordLength;
 						for (int j=0; j<recordLength; j++)
 							*(oneRecordPointer+j) = *(endRecordPointer+j);
 					}

@@ -504,35 +504,22 @@ namelist1:
 expr:
 	{
 	}
-	| STRING
+	| STRING 
 	{
+		cout << 1 << endl;
 		exprValueList.push_back($1);
 	}
 	| NUMBER
-	{
-		exprValueList.push_back($1);
-	}
-	| STRING BLANK
-	{
-		exprValueList.push_back($1);
-	}
-	| NUMBER BLANK
-	{
+	{	
+		cout << 2 << endl;
 		exprValueList.push_back($1);
 	}
 	| BLANK STRING
 	{
+		cout << 5 << endl;
 		exprValueList.push_back($2);
 	}
 	| BLANK NUMBER
-	{
-		exprValueList.push_back($2);
-	}
-	| BLANK STRING BLANK
-	{
-		exprValueList.push_back($2);
-	}
-	| BLANK NUMBER BLANK
 	{
 		exprValueList.push_back($2);
 	}
@@ -2104,15 +2091,10 @@ void deleteFrom() {
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	
-	cout << "-----------------" << endl;
 	vector<vector<string> > record = rm->get_all_record();
 	
 	vector<string> attr = rm->get_attr_name();
 	vector<int> type = rm->get_attr_type();
-	for (int i=0; i<type.size(); i++) {
-		cout << type[i] << " ";
-	}
-	cout << endl;
 	vector<int> clauseLeft, clauseRight;
 	clauseLeft.clear();
 	clauseRight.clear();
@@ -2146,15 +2128,6 @@ void deleteFrom() {
 		clauseRight.push_back(flag);
 	}
 
-	for (int i=0; i< clauseLeft.size(); i++) cout << clauseLeft[i] << " ";
-	cout << endl;
-	for (int i=0; i< clauseRight.size(); i++) cout << clauseRight[i] << " ";
-	cout << endl;
-	for (int j=0; j<clauseOpList.size(); j++) cout << clauseOpList[j] << " ";
-	cout << endl;
-
-	for (int j=0; j<clauseOpList.size(); j++) cout << clauseRightList[j] << " ";
-	cout << endl;
 	flag = 0;
 	vector<string> delList;
 	delList.clear();
@@ -2294,7 +2267,6 @@ void deleteFrom() {
 		}
 		if (flag == 0) {
 			delList.push_back(record[i][0]);
-			cout << i << " " << record[i][0] << endl;
 		}	
 	}
 	for (int i=0; i<delList.size(); i++) 
@@ -2303,7 +2275,241 @@ void deleteFrom() {
 }
 
 void updateSet() {
-	cout << "updateSet" << endl;
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesb't exist... \n", tbName.c_str());
+		return;
+	}
+
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	
+	vector<vector<string> > record = rm->get_all_record();
+	
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();
+	vector<int> clauseLeft, clauseRight;
+	clauseLeft.clear();
+	clauseRight.clear();
+	int flag;
+	for (int i=0; i<clauseNameList.size(); i++) {
+		flag = 0;
+		for (int j=0; j<attr.size(); j++)
+			if (attr[j] == clauseNameList[i]) {
+				flag = j+1;
+				break;
+			}
+		if (flag == 0) {
+			printf("attrName %s doesn't exist.. \n", clauseNameList[i].c_str());
+			return;	
+		}
+		clauseLeft.push_back(flag);
+		flag = 0;
+		if (clauseRightList[i][0] == '\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
+			clauseRight.push_back(0);
+			continue;
+		}
+		for (int j=0; j<attr.size(); j++)
+			if (attr[j] == clauseRightList[i]) {
+				flag = j+1;
+				break;
+			}
+		if (flag == 0) {
+			printf("attrName %s doesn't exist.. \n", clauseRightList[i].c_str());
+			return;	
+		}
+		clauseRight.push_back(flag);
+	}
+
+	flag = 0;
+	vector<string> delList;
+	delList.clear();
+	string temp = "";
+	int set = -1;
+	for (int i=0; i<attr.size(); i++) {
+		if (attr[i] == setName) {
+			set = i;
+			break;
+		}	
+	}
+	cout << "attr[set]: " << attr[set] << endl;
+	if (set == -1) {
+		printf("attrName %s doesn't exist.. \n", setName.c_str());
+		return;
+	}	
+	string ans = "";
+	for (int i=0; i<record.size(); i++) { 
+		flag = 0;
+		for (int j=0; j<clauseOpList.size(); j++) {		
+			if (clauseOpList[j] == "=") {
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
+					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]==0 && clauseRightList[j][0]=='\'') {
+					temp = temp2+record[i][clauseLeft[j]]+temp2;
+					if (temp != clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (record[i][clauseLeft[j]] != clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+				
+			}
+			if (clauseOpList[j] == ">") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) <= atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) <= atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "<") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) >= atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) >= atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == ">=") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) < atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) < atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "<=") {
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (atoi(record[i][clauseLeft[j]].c_str()) > atoi(record[i][clauseRight[j]].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (atoi(record[i][clauseLeft[j]].c_str()) > atoi(clauseRightList[j].c_str())) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+			if (clauseOpList[j] == "!=") {
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
+					if (record[i][clauseLeft[j]] == record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					} 
+				} else
+				if (type[clauseLeft[j]-1]==0 && clauseRight[j]==0 && clauseRightList[j][0]=='\'') {
+					temp = temp2+record[i][clauseLeft[j]]+temp2;
+					if (temp == clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]>0 && type[clauseRight[j]-1]==1) {
+					if (record[i][clauseLeft[j]] == record[i][clauseRight[j]]) {
+						flag = 1;
+						break;
+					}
+				} else
+				if (type[clauseLeft[j]-1]==1 && clauseRight[j]==0 && clauseRightList[j][0]!='\'') {
+					if (record[i][clauseLeft[j]] == clauseRightList[j]) {
+						flag = 1;
+						break;
+					}
+				} else {
+					printf("compare error! \n");
+					return;
+				}
+			}
+		}
+		if (flag == 0) {
+			ans = "";
+			cout << exprValueList[0][0] << " " << set << endl;
+			if (exprValueList[0][0] == '\'' && exprOpList.size()>0) {
+				printf("Operator error! \n");
+				return;
+			}
+			if (exprValueList[0][0] == '\'' && type[set]==1) {
+				printf("Operator error! \n");
+				return;
+			}
+			if (exprValueList[0][0] != '\'' && type[set]==0) {
+				printf("Operator error! \n");
+				return;
+			}
+			if (exprValueList[0][0] == '\'') {
+				string tempa = "";
+				for (int k=1; k<exprValueList[0].length()-1; k++) tempa += exprValueList[0][k];
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], exprValueList[0])) {
+					cout << "wrong update" << endl;
+				}
+				else {
+					cout << "success update" << endl;
+				}
+				rm->print_all_record();			
+			}
+		}	
+	}
 } 
 
 void selectFrom() {
@@ -2382,7 +2588,7 @@ int main()
 		
 		
 		if (type != "") work();
-		/*
+		
 		cout << "type: " << type << endl;	
 		cout << "dbName: " << dbName << endl;	
 		cout << "tbName: " << tbName << endl;	
@@ -2401,7 +2607,7 @@ int main()
 
 		cout << "attrNameList:";  
     		for (iter=attrNameList.begin();iter!=attrNameList.end();iter++)  
-        		cout << " " << *iter;  
+        		cout << " " << *iter;   	
 		cout << endl;
 		cout << "tbNameList:";  
 		for (iter=tbNameList.begin();iter!=tbNameList.end();iter++)  
@@ -2419,6 +2625,7 @@ int main()
 		for (iterInt=attrNotNullList.begin();iterInt!=attrNotNullList.end();iterInt++)  
         		cout << " " << *iterInt;  
 		cout << endl;
+		cout << "exprValueList:";  
 		for (iter=exprValueList.begin();iter!=exprValueList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;
@@ -2438,7 +2645,7 @@ int main()
 		for (iter=clauseRightList.begin();iter!=clauseRightList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;
-*/
+
 	}	
 	return 0;
 }
