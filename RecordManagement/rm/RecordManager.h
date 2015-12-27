@@ -359,6 +359,11 @@ public:
 			cout << endl;
 		}
 	}
+
+	vector<string> get_attr_name() {
+		return str_vec;
+	}
+	
 	vector< vector<string> > get_all_record() {
 		return all_record;
 	}
