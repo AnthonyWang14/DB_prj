@@ -22,6 +22,13 @@
 //#define BUF_PAGE_NUM 65536
 #define MAX_FILE_NUM 128
 #define MAX_TYPE_NUM 256
+
+//my code
+/*
+ *存储各个页面记录条数的页数
+ *说明共有PAGE_INT_NUM*PAGE_FILE_NUM个页	
+*/
+#define PAGE_FILE_NUM 10
 /*
  * 缓存中页面个数上限
  */
