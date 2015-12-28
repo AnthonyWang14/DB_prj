@@ -85,7 +85,7 @@ public:
 			}
 			attr_name++;
 			str_vec.push_back(temp);
-			cout << temp << endl;
+			//cout << temp << endl;
 		}
 		show_table_info();
 		update_all_record(fileID);
@@ -221,7 +221,7 @@ public:
 		//缓存了所有页面record条数
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
-		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) {
+		for (int pageID = 1; pageID < pageNum; pageID++) {
 			if (!pageRecordNum[pageID]) continue;
 			cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
 			cout << endl;
@@ -236,7 +236,7 @@ public:
 	}
 
 	void writeAttr(string str, BufType& attrPointer) {
-		cout << str << endl;
+		//cout << str << endl;
 		for (int i=0; i<str.length(); i++) {
 			*(attrPointer) = (unsigned int)str[i];
 			attrPointer++;
@@ -284,8 +284,8 @@ public:
 		} 
 		// 如果是字符的话
 		if (attr_types[attr] == 0) {
-			cout << attr_types[attr] << endl;
-			cout << attr_num << endl;
+			//cout << attr_types[attr] << endl;
+			//cout << attr_num << endl;
 			char *temp = (char*)b;
 			if (record_attr[0] != '\'') {
 				cout << "你字符串没有用两个引号框起来啊" << record_attr;
@@ -327,10 +327,10 @@ public:
 		//缓存了所有页面record条数
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
-		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) {
+		for (int pageID = 1; pageID < pageNum; pageID++) {
 			if (!pageRecordNum[pageID]) continue;
-			cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
-			cout << endl;
+			//cout << "pageID:  " << pageID << "  recordNum this page:  " << pageRecordNum[pageID] << endl;
+			//cout << endl;
 			int index_this;
 			BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
 			for (int i = 0; i < pageRecordNum[pageID]; i++) {
@@ -431,10 +431,10 @@ public:
 		ss << *(record_ptr++); 
 		string s1 = ss.str();
 		rtn.push_back(s1);
-		cout<< s1 << endl;
+		//cout<< s1 << endl;
 		// cout << "RID" << *(record_ptr++) << endl;
 		for (int i = 0; i < attr_num; i++) {
-			cout << str_vec[i] << endl;
+			//cout << str_vec[i] << endl;
 			string attr_value;
 			if (attr_types[i] == 0) {
 				char* temp = (char*)record_ptr; 
@@ -513,24 +513,25 @@ public:
 		//总页数
 		int recordLength   = b[0];
 		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
+		//cout << "pageNum " <<  pageNum << endl;
 		int index_this;
 		BufType pageRecordNum;
 		pageRecordNum = b+4;
 		int flag = 0;
-		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) { //枚举每一页
+		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
 			 if (flag) break;
 			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
 			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
 			 	BufType oneRecordPointer = b2 + i * recordLength;
 				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
-					cout << "catch you!!" <<endl;
+					//cout << "catch you!!" <<endl;
 					BufType attrPointer = oneRecordPointer+1;
+					for (int k = 0; k < attr_key_index; k++)
+						attrPointer += attr_pos[k];
 					int result = write_attr(attr_key_index, attr_value, attrPointer);
 					flag = 1;
 					if (result == 1) 
 						return result; 
-
 					break;
 					
 				}
@@ -553,30 +554,33 @@ public:
 		//总页数
 		int recordLength   = b[0];
 		int pageNum        = b[1];
-		cout << "pageNum " <<  pageNum << endl;
+		//cout << "pageNum " <<  pageNum << endl;
 		int index_this;
 		
-		BufType pageRecordNum;
+		BufType pageRecordNum; 
 		pageRecordNum = b+4;
 		int flag = 0;
-		for (int pageID = first_pageID; pageID < (pageNum+first_pageID-1); pageID++) { //枚举每一页
+		for (int pageID = 1; pageID < pageNum; pageID++) { //枚举每一页
 			 if (flag) break;
 			 BufType b2 = bufPageManager->allocPage(fileID, pageID, index_this, true);
 			 for (int i = 0; i < pageRecordNum[pageID]; i++) {//枚举一页中的每条记录
 			 	BufType oneRecordPointer = b2 + i * recordLength;
 				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
-					cout << "catch you!!" <<endl;
-					pageRecordNum[pageID]--;
-					b[2]--;
+					//cout << "catch you!!" <<endl;
+					cout << "RID " << RID << endl;
+					cout << "pageRecordNum" << pageRecordNum[pageID] << " record " << i << endl;
+
 					if (i == (pageRecordNum[pageID]-1)) { //该记录为这一页的最后一条记录,将其删除
 						//nothing need to do
+						cout << "delete last record" << endl;
 					}
 					else {                                //该记录不是最后一条，用最后一条将其替代
-						BufType endRecordPointer = b2 + (pageRecordNum[pageID]) * recordLength;
+						BufType endRecordPointer = b2 + (pageRecordNum[pageID]-1) * recordLength;
 						for (int j=0; j<recordLength; j++)
 							*(oneRecordPointer+j) = *(endRecordPointer+j);
 					}
 					flag = 1;
+					pageRecordNum[pageID]--;
 					break;
 				}
 			 }
