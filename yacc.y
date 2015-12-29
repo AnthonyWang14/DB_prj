@@ -11,6 +11,7 @@
 #include <errno.h>           //perror()
 #include "SystemManagement/def.h"
 
+
  
 #include "RecordManagement/bufmanager/BufPageManager.h"
 #include "RecordManagement/fileio/FileManager.h"
@@ -26,6 +27,7 @@ string tbName;
 string attrName; 
 string attrName1; 
 string attrName2; 
+string tempName; 
 string attrName3; 
 string selectType; 
 string setName;
@@ -60,6 +62,7 @@ extern "C"
 %token<m_sId>STRING
 %token<m_sId>NAME
 %token<m_sId>ATTRNAME
+%token<m_sId>ATTRNAME2
 %token<m_sId>ATTRNUM
 
 %token<m_sId>EXIT
@@ -433,23 +436,7 @@ tokenlist:
 		YYACCEPT;
 	}
 
-	| SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME EXIT 
-	{
-		type = "select";
-		selectType = $3;
-		attrName = $5;
-		tbName = $9;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME EXIT 
-	{
-		type = "select";
-		selectType = $4;
-		attrName = $6;
-		tbName = $10;
-		YYACCEPT;
-	}
-
+	
 	| SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
 	{
 		type = "select";
@@ -467,186 +454,19 @@ tokenlist:
 		YYACCEPT;
 	}
 
-	| SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
-	{
-		type = "select";
-		selectType = $3;
-		attrName = $5;
-		tbName = $9;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
-	{
-		type = "select";
-		selectType = $4;
-		attrName = $6;
-		tbName = $10;
-		YYACCEPT;
-	}
 
 
 
 //select attrName1, SUM(attrName2) From tableName GROUP BY attrName1
-	| SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	| SELECT BLANK ATTRNAME2 BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
 	{
+		tempName =$3;
 		type = "select group";
-		selectType = $5;
-		attrName1 = $3;
-		attrName2 = $6;
-		attrName3 = $16;
-		tbName = $10;
+		tbName = $7;
+		attrName3 = $13;
 		YYACCEPT;
 	}
-	| SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $5;
-		attrName1 = $3;
-		attrName2 = $6;
-		attrName3 = $16;
-		tbName = $10;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $4;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $4;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $3;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $3;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $4;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $4;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $3;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $6;
-		attrName1 = $3;
-		attrName2 = $7;
-		attrName3 = $17;
-		tbName = $11;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $4;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $4;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $3;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $7;
-		attrName1 = $3;
-		attrName2 = $8;
-		attrName3 = $18;
-		tbName = $12;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
-	{
-		type = "select group";
-		selectType = $8;
-		attrName1 = $4;
-		attrName2 = $9;
-		attrName3 = $19;
-		tbName = $13;
-		YYACCEPT;
-	}
-	| BLANK SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
-	{
-		type = "select group";
-		selectType = $8;
-		attrName1 = $4;
-		attrName2 = $9;
-		attrName3 = $19;
-		tbName = $13;
-		YYACCEPT;
-	}
+	
 
 //insert into [tableName(attrName1, attrName2,…, attrNameN)] VALUES (attrValue1, attrValue2,…, attrValueN) 
 	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
@@ -3200,9 +3020,10 @@ void insertInto() {
 	vector<string> newRecord;
 	int now = 0;
 	cout << attrValueList.size() << endl;
+	if (cnt%100==0) cout << cnt<<endl;
+	cnt++;
 	for (int i=0; i<attrValueList.size(); i++) { 
-		if (cnt%100==0) cout << cnt<<endl;
-		cnt++;newRecord.clear();
+		newRecord.clear();
 		for (int j=0; j<attrValueList[i].size(); j++) {
 			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
 				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
@@ -3213,7 +3034,7 @@ void insertInto() {
 	}
 	//delete fm;
 	//delete rm;
-	rm->print_all_record(fileID);
+	//rm->print_all_record(fileID);
 }
 
 
@@ -3228,11 +3049,13 @@ void selectFrom() {
 	FileManager* fm[tbNameList.size()];
 	RecordManager* rm[tbNameList.size()];
 	int fileID[tbNameList.size()];
-	vector<vector<string> > * record = new vector<vector<string> >(tbNameList.size());
-	vector<string> * attr = new vector<string>(tbNameList.size());
-	vector<int>* type = new vector<int>(tbNameList.size());
+	vector<vector<string> > * record = new vector<vector<string> >[tbNameList.size()];
+	vector<string> * attr = new vector<string>[tbNameList.size()];
+	vector<int>* type = new vector<int>[tbNameList.size()];
+	cout << tbNameList.size() << endl;
 	for (int i=0; i<tbNameList.size(); i++) {
 		string path = DB_ROOT+temp0+currentDb+temp0+tbNameList[i];
+		cout << path << endl;
 		if((access(path.c_str(),F_OK)))
 		{
 			printf("table %s doesb't exist... \n", tbName.c_str());
@@ -3245,6 +3068,7 @@ void selectFrom() {
 		record[i] = rm[i]->get_all_record(fileID[i]);
 		attr[i] = rm[i]->get_attr_name();
 		type[i] = rm[i]->get_attr_type();
+
 	}
 	
 	vector<int> clauseLeftAttr, clauseRightAttr;
@@ -3664,7 +3488,6 @@ void selectFrom() {
 				string temp = "";
 				//cout << clauseOpList.size() << endl;
 				for (int j=0; j<clauseOpList.size(); j++) {
-					cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;	
 					//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
 					if (clauseOpList[j] == "=") {
 						int tp1,tp2;
@@ -4120,6 +3943,32 @@ void work() {
 }
 
 int make() {
+	if (tempName != "") {
+		cout << tempName << endl;
+		int now = 0;
+		string temp = "";	
+		while (tempName[now]!=',') {
+			temp+=tempName[now];			
+			now++;
+		}
+		attrName1 = temp;
+		cout << temp << endl;
+		temp = "";
+		now++;
+		while (tempName[now]!='(') {
+			temp+=tempName[now];			
+			now++;
+		}
+		selectType = temp;
+		now++;
+		temp = "";
+		while (tempName[now]!=')') {
+			temp+=tempName[now];			
+			now++;
+		}
+		attrName2 = temp;
+		cout << temp << endl;
+	}
 	int now = 0;
 	string temp = "";	
 	for (int i=0; i<attrNumList.size(); i++) {
@@ -4152,32 +4001,25 @@ int make() {
 	now = 0;
 	temp = "";
 	while (attrName[now]=='(' || attrName[now]==' ') now++;
-	for (int k=now; k<attrName.length(); k++)
-		if (attrName[k] != ' ' && attrName[k] != ')') temp += attrName[k]; else break;
-	attrName = temp;
+	if (now!=0) {
+		for (int k=now; k<attrName.length(); k++)
+			if (attrName[k] != ' ' && attrName[k] != ')') temp += attrName[k]; else break;
+		attrName = temp;
+	}
 	now = 0;
 	temp = "";
 	while (attrName2[now]=='(' || attrName2[now]==' ') now++;
-	for (int k=now; k<attrName2.length(); k++)
-		if (attrName2[k] != ' ' && attrName2[k] != ')') temp += attrName2[k]; else break;
-	attrName2 = temp;
+	if (now!=0) {
+		for (int k=now; k<attrName2.length(); k++)
+			if (attrName2[k] != ' ' && attrName2[k] != ')') temp += attrName2[k]; else break;
+		attrName2 = temp;
+	}
 		
 }
 
 int main()						
 {	
-	int i=0;
-	/*const char* sFile="book.sql";//打开要读取的文本文件  
-    	FILE* fp=fopen(sFile, "r");  
-   	if(fp==NULL)  
-    	{  
-        	printf("cannot open %s\n", sFile);  
-        	return -1;  
-    	}  
-   	 extern FILE* yyin;  //yyin和yyout都是FILE*类型  
-    	yyin=fp;//yacc会从yyin读取输入，yyin默认是标准输入，这里改为磁盘文件。yacc默认向yyout输出，可修改yyo /
-    	*/
-    	while(1) {
+	while(1) {
 		cout << "  >> ";	
 		type = "";
 		dbName = "";
@@ -4196,7 +4038,6 @@ int main()
 		clauseNameList.clear();
 		clauseOpList.clear();
 		clauseRightList.clear();
-		//yyparse();
 		while( yyparse()) {
 				
 		}
@@ -4208,10 +4049,12 @@ int main()
 		cout << endl;
 		*/
 		if (type != "") work();	
-		/*
 		cout << "type: " << type << endl;	
 		cout << "selectType: " << selectType << endl; 	
 		cout << "attrName: " << attrName << endl;
+		cout << "attrName1: " << attrName1 << endl;
+		cout << "attrName2: " << attrName2 << endl;
+		cout << "attrName3: " << attrName3 << endl;
 		cout << "dbName: " << dbName << endl;	
 		cout << "tbName: " << tbName << endl;	
 		cout << "setName: " << setName << endl;	
@@ -4267,9 +4110,8 @@ int main()
 		for (iter=clauseRightList.begin();iter!=clauseRightList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;
-		*/
+
 	}
-//fclose(fp);	
 	return 0;
 }
 

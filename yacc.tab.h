@@ -43,31 +43,32 @@
      STRING = 259,
      NAME = 260,
      ATTRNAME = 261,
-     ATTRNUM = 262,
-     EXIT = 263,
-     CREATE = 264,
-     DROP = 265,
-     USE = 266,
-     SHOW = 267,
-     DATABASE = 268,
-     PRIMARY = 269,
-     KEY = 270,
-     INSERT = 271,
-     INTO = 272,
-     VALUES = 273,
-     DELETE = 274,
-     FROM = 275,
-     WHERE = 276,
-     AND = 277,
-     UPDATE = 278,
-     SET = 279,
-     SELECT = 280,
-     GROUP = 281,
-     BY = 282,
-     TABLE = 283,
-     BLANK = 284,
-     NOT = 285,
-     NUL = 286
+     ATTRNAME2 = 262,
+     ATTRNUM = 263,
+     EXIT = 264,
+     CREATE = 265,
+     DROP = 266,
+     USE = 267,
+     SHOW = 268,
+     DATABASE = 269,
+     PRIMARY = 270,
+     KEY = 271,
+     INSERT = 272,
+     INTO = 273,
+     VALUES = 274,
+     DELETE = 275,
+     FROM = 276,
+     WHERE = 277,
+     AND = 278,
+     UPDATE = 279,
+     SET = 280,
+     SELECT = 281,
+     GROUP = 282,
+     BY = 283,
+     TABLE = 284,
+     BLANK = 285,
+     NOT = 286,
+     NUL = 287
    };
 #endif
 /* Tokens.  */
@@ -75,31 +76,32 @@
 #define STRING 259
 #define NAME 260
 #define ATTRNAME 261
-#define ATTRNUM 262
-#define EXIT 263
-#define CREATE 264
-#define DROP 265
-#define USE 266
-#define SHOW 267
-#define DATABASE 268
-#define PRIMARY 269
-#define KEY 270
-#define INSERT 271
-#define INTO 272
-#define VALUES 273
-#define DELETE 274
-#define FROM 275
-#define WHERE 276
-#define AND 277
-#define UPDATE 278
-#define SET 279
-#define SELECT 280
-#define GROUP 281
-#define BY 282
-#define TABLE 283
-#define BLANK 284
-#define NOT 285
-#define NUL 286
+#define ATTRNAME2 262
+#define ATTRNUM 263
+#define EXIT 264
+#define CREATE 265
+#define DROP 266
+#define USE 267
+#define SHOW 268
+#define DATABASE 269
+#define PRIMARY 270
+#define KEY 271
+#define INSERT 272
+#define INTO 273
+#define VALUES 274
+#define DELETE 275
+#define FROM 276
+#define WHERE 277
+#define AND 278
+#define UPDATE 279
+#define SET 280
+#define SELECT 281
+#define GROUP 282
+#define BY 283
+#define TABLE 284
+#define BLANK 285
+#define NOT 286
+#define NUL 287
 
 
 

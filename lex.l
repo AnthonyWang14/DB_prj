@@ -40,6 +40,7 @@ number		({digit}+)
 name		([A-Za-z~`!@#$%^&_.][0-9A-Za-z~`@#$%^&_.]*)
 string 		('[^']*')
 attrName	([(][ \f\r\t\v]*{name}[ \f\r\t\v]*[)])
+attrName2	({name},{name}{attrName})
 attrNum		([(][ \f\r\t\v]*{number}[ \f\r\t\v]*[)])
 blank_chars	([ \f\r\t\v]+)
 
@@ -87,6 +88,10 @@ blank_chars	([ \f\r\t\v]+)
 {attrName}	{
 			yylval.m_sId=yytext;
 			return ATTRNAME;
+		}
+{attrName2}	{
+			yylval.m_sId=yytext;
+			return ATTRNAME2;
 		}
 
 {attrNum}	{

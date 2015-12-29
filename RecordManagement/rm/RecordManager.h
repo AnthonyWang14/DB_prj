@@ -249,7 +249,9 @@ public:
 			//cout << attr_num << endl;
 	 		char *temp = (char*)b;
 	 		if (record_attr[0] != '\'') {
-	 			cout << "你字符串没有用两个引号框起来啊" << record_attr;
+	 			cout << str_vec[attr] << "字段必须是字符串" << endl;
+	 			// cout << "你字符串没有用两个引号框起来啊" << record_attr;
+	 			// cout << "类型错误" << endl;
 	 			return 1;
 	 		}
 	 		for (int i = 1; i < record_attr.length()-1; i++) {
@@ -261,7 +263,12 @@ public:
 	 	}
 		// int
 	 	else {
+
 	 		int *temp = (int *)b;
+	 		if (record_attr[0] == '\'') {
+	 			cout << str_vec[attr] << "字段必须是整型" << endl;
+	 			return 1;
+	 		}
 	 		for (int i = 0; i < record_attr.length(); i++) {
 	 			temp[i] = int(record_attr[i]-'0');
 	 		}
