@@ -1,6 +1,7 @@
 %{
 #include "main.h"	
 #include <vector>
+#include <stack>
 #include <fcntl.h>
 #include <unistd.h>          //chdir()
 #include <sys/stat.h>        //mkdir()
@@ -17,12 +18,17 @@
 #include "RecordManagement/rm/RecordManager.h"
 #include "RecordManagement/utils/pagedef.h"
 #include <map>
-
+#include <algorithm>
 
 int a;
 string type;
 string dbName;
 string tbName; 
+string attrName; 
+string attrName1; 
+string attrName2; 
+string attrName3; 
+string selectType; 
 string setName;
 string primaryKey;
 string currentDb = "orderDB";
@@ -35,6 +41,7 @@ vector<string> 	tempList;
 vector<string> 	exprValueList;
 vector<char> 	exprOpList;
 vector<int> 	attrNotNullList;
+vector<int> 	nullList;
 
 vector<string>  clauseNameList;
 vector<string>	clauseOpList;
@@ -74,6 +81,8 @@ extern "C"
 %token<m_sId>UPDATE
 %token<m_sId>SET
 %token<m_sId>SELECT
+%token<m_sId>GROUP
+%token<m_sId>BY
 %token<m_sId>TABLE
 %token<m_sId>BLANK
 %token<m_sId>NOT
@@ -84,7 +93,6 @@ extern "C"
 %type<m_sId>tableDetail
 %type<m_sId>tableDetail2
 %type<m_sId>tableDetail3
-%type<m_sId>tableDetail4
 %type<m_sId>insertDetail0
 %type<m_sId>insertDetail
 %type<m_sId>insertDetail2
@@ -274,55 +282,6 @@ tokenlist:
 		YYACCEPT;
 	}
 
-//insert into [tableName(attrName1, attrName2,…, attrNameN)] VALUES (attrValue1, attrValue2,…, attrValueN) 
-	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
-	{
-		tbName = $5;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT	
-	{
-		tbName = $5;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
-	{
-		tbName = $6;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT
-	{
-		tbName = $6;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
-	{
-		tbName = $5;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
-	{
-		tbName = $5;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
-	{
-		tbName = $6;
-		type = "insert into";
-		YYACCEPT;
-	}
-	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
-	{
-		tbName = $6;
-		type = "insert into";
-		YYACCEPT;
-	}
 
 //delete from tableName where whereclauses
 	| DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
@@ -427,6 +386,545 @@ tokenlist:
 	{
 		type = "select from";
 		YYACCEPT;
+	}
+
+
+//select SUM(attrName) From tableName
+	| SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME EXIT 
+	{
+		type = "select";
+		selectType = $3;
+		attrName = $4;
+		tbName = $8;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME EXIT 
+	{
+		type = "select";
+		selectType = $4;
+		attrName = $5;
+		tbName = $9;
+		YYACCEPT;
+	}
+
+	| SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME EXIT 
+	{
+		type = "select";
+		selectType = $3;
+		attrName = $5;
+		tbName = $9;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME EXIT 
+	{
+		type = "select";
+		selectType = $4;
+		attrName = $6;
+		tbName = $10;
+		YYACCEPT;
+	}
+
+	| SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
+	{
+		type = "select";
+		selectType = $3;
+		attrName = $4;
+		tbName = $8;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
+	{
+		type = "select";
+		selectType = $4;
+		attrName = $5;
+		tbName = $9;
+		YYACCEPT;
+	}
+
+	| SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
+	{
+		type = "select";
+		selectType = $3;
+		attrName = $5;
+		tbName = $9;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ATTRNAME BLANK FROM BLANK NAME BLANK EXIT 
+	{
+		type = "select";
+		selectType = $4;
+		attrName = $6;
+		tbName = $10;
+		YYACCEPT;
+	}
+
+
+
+//select attrName1, SUM(attrName2) From tableName GROUP BY attrName1
+	| SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $5;
+		attrName1 = $3;
+		attrName2 = $6;
+		attrName3 = $16;
+		tbName = $10;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $5;
+		attrName1 = $3;
+		attrName2 = $6;
+		attrName3 = $16;
+		tbName = $10;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $4;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $4;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $3;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $3;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $4;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ',' NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $4;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $3;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $6;
+		attrName1 = $3;
+		attrName2 = $7;
+		attrName3 = $17;
+		tbName = $11;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $4;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $4;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $3;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $7;
+		attrName1 = $3;
+		attrName2 = $8;
+		attrName3 = $18;
+		tbName = $12;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME EXIT 
+	{
+		type = "select group";
+		selectType = $8;
+		attrName1 = $4;
+		attrName2 = $9;
+		attrName3 = $19;
+		tbName = $13;
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK NAME BLANK ',' BLANK NAME ATTRNAME BLANK FROM BLANK NAME BLANK GROUP BLANK BY BLANK NAME BLANK EXIT 
+	{
+		type = "select group";
+		selectType = $8;
+		attrName1 = $4;
+		attrName2 = $9;
+		attrName3 = $19;
+		tbName = $13;
+		YYACCEPT;
+	}
+
+//insert into [tableName(attrName1, attrName2,…, attrNameN)] VALUES (attrValue1, attrValue2,…, attrValueN) 
+	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
+	{
+		cout << 1 << endl;
+		tbName = $5;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT	
+	{
+		cout << 1 << endl;
+		tbName = $5;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
+	{
+		cout << 1 << endl;
+		tbName = $6;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT
+	{
+		cout << 1 << endl;
+		tbName = $6;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
+	{
+		cout << 1 << endl;
+		tbName = $5;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
+	{
+		cout << 1 << endl;
+		tbName = $5;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
+	{
+		cout << 1 << endl;
+		tbName = $6;
+		type = "insert into";
+		YYACCEPT;
+	}
+	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
+	{
+		cout << 1 << endl;
+		tbName = $6;
+		type = "insert into";
+		YYACCEPT;
+	};
+
+insertDetail0:
+	{
+	}
+	| ATTRNAME
+	{
+		tempList.push_back($1);
+		attrValueList.push_back(tempList);
+	}
+	| ATTRNUM
+	{
+		tempList.push_back($1);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK ATTRNUM
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| ATTRNUM BLANK
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK ATTRNUM BLANK
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| '(' insertDetail ')' BLANK
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK '(' insertDetail ')' BLANK
+	{ 
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}	
+	| insertDetail0 ',' ATTRNUM
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNUM
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNUM BLANK
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNUM BLANK
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNAME
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNAME
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNAME BLANK
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNAME BLANK
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' '(' insertDetail ')' BLANK
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK '(' insertDetail ')' BLANK
+	{ 
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	
+	;
+
+insertDetail:
+	{
+	}
+	| NUMBER	
+	{
+		tempList.push_back($1);
+	}
+	| NUL	
+	{
+		tempList.push_back("NULL");
+	}
+	| STRING	
+	{
+		tempList.push_back($1);
+	}
+	| BLANK NUMBER	
+	{
+		tempList.push_back($2);
+	}
+	| BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| BLANK STRING
+	{
+		tempList.push_back($2);
+	}
+	| insertDetail ',' STRING
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' NUMBER
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' STRING BLANK
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' BLANK STRING
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' BLANK STRING BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' BLANK NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' NUMBER BLANK
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' BLANK NUMBER
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' BLANK NUMBER BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' STRING
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' NUMBER
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' STRING BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' BLANK STRING
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' BLANK STRING BLANK
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' BLANK NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' NUMBER BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' BLANK NUMBER
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' BLANK NUMBER BLANK
+	{
+		tempList.push_back($5);
 	};
 
 namelist:
@@ -436,15 +934,7 @@ namelist:
 	{
 		attrNameList.push_back($1);
 	}
-	| NAME BLANK
-	{
-		attrNameList.push_back($1);
-	}
 	| BLANK NAME
-	{
-		attrNameList.push_back($2);
-	}
-	| BLANK NAME BLANK
 	{
 		attrNameList.push_back($2);
 	}
@@ -472,15 +962,7 @@ namelist1:
 	{
 		tbNameList.push_back($1);
 	}
-	| NAME BLANK
-	{
-		tbNameList.push_back($1);
-	}
 	| BLANK NAME
-	{
-		tbNameList.push_back($2);
-	}
-	| BLANK NAME BLANK
 	{
 		tbNameList.push_back($2);
 	}
@@ -506,20 +988,25 @@ expr:
 	}
 	| STRING 
 	{
-		cout << 1 << endl;
 		exprValueList.push_back($1);
 	}
 	| NUMBER
 	{	
-		cout << 2 << endl;
+		exprValueList.push_back($1);
+	}
+	| NAME
+	{	
 		exprValueList.push_back($1);
 	}
 	| BLANK STRING
 	{
-		cout << 5 << endl;
 		exprValueList.push_back($2);
 	}
 	| BLANK NUMBER
+	{
+		exprValueList.push_back($2);
+	}
+	| BLANK NAME
 	{
 		exprValueList.push_back($2);
 	}
@@ -599,6 +1086,87 @@ expr:
 		exprValueList.push_back($5);
 	}
 	| expr BLANK '/' BLANK NUMBER
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($5);
+	}
+
+	| expr '+' NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($3);
+	}
+	| expr '-' NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($3);
+	}
+	| expr '*' NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($3);
+	}
+	| expr '/' NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($3);
+	}
+	| expr '+' BLANK NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr '-' BLANK NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr '*' BLANK NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr '/' BLANK NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '-' NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '*' NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '/' NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' BLANK NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '-' BLANK NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '*' BLANK NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '/' BLANK NAME
 	{
 		exprOpList.push_back('/');
 		exprValueList.push_back($5);
@@ -1430,168 +1998,6 @@ whereclauses:
 		clauseRightList.push_back($10);
 	};
 
-insertDetail0:
-	{
-	}
-	| ATTRNUM
-	{
-		tempList.push_back($1);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK ATTRNUM
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| ATTRNUM BLANK
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK ATTRNUM BLANK
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| '(' insertDetail ')' BLANK
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK '(' insertDetail ')' BLANK
-	{ 
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}	
-	| insertDetail0 ',' ATTRNUM
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNUM
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' ATTRNUM BLANK
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNUM BLANK
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' '(' insertDetail ')' BLANK
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK '(' insertDetail ')' BLANK
-	{ 
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	
-	;
-
-insertDetail:
-	{
-	}
-	| NUMBER	
-	{
-		tempList.push_back($1);
-	}
-	| STRING	
-	{
-		tempList.push_back($1);
-	}
-	| NUMBER BLANK	
-	{
-		tempList.push_back($1);
-	}
-	| STRING BLANK
-	{
-		tempList.push_back($1);
-	}
-	| BLANK NUMBER	
-	{
-		tempList.push_back($2);
-	}
-	| BLANK STRING
-	{
-		tempList.push_back($2);
-	}
-	| BLANK NUMBER BLANK
-	{
-		tempList.push_back($2);
-	}
-	| BLANK STRING BLANK
-	{
-		tempList.push_back($2);
-	}
-	| insertDetail ',' STRING
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' NUMBER
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' STRING BLANK
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' BLANK STRING
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' BLANK STRING BLANK
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' NUMBER BLANK
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' BLANK NUMBER
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' BLANK NUMBER BLANK
-	{
-		tempList.push_back($4);
-	};
-
 
 tableDetail:
 	{
@@ -2041,31 +2447,35 @@ void showTb() {
 }
 
 void insertInto() {
-	if (currentDb == "") {
+	if (currentDb == "") { 
 		printf("Plz choose a DB first... \n");
 		return;
 	}  
 	string temp0 = "/";
-	string temp1 = ".txt";
+	string temp1 = ".txt"; 
+	string temp2 = "'"; 
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
 	if((access(path.c_str(),F_OK)))
 	{
 		printf("table %s doesb't exist... \n", tbName.c_str());
 		return;
 	} 
-	int fileID;
+	int fileID; 
 	FileManager* fm = new FileManager();
 	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	vector<string> newRecord;
 	int now = 0;
-	for (int i=0; i<attrValueList.size(); i++) {
+	cout << attrValueList.size() << endl;
+	for (int i=0; i<attrValueList.size(); i++) { 
 		newRecord.clear();
-		for (int j=0; j<attrValueList[i].size(); j++)
-			newRecord.push_back(attrValueList[i][j]);
-		
-		rm->insert_record(fileID, newRecord);
+		for (int j=0; j<attrValueList[i].size(); j++) {
+			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
+				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
+			else newRecord.push_back(attrValueList[i][j]);
+		}
+		rm->insert_record(fileID, newRecord );
 	}
 	rm->print_all_record();
 }
@@ -2144,6 +2554,7 @@ void deleteFrom() {
 				} else
 				if (type[clauseLeft[j]-1]==0 && clauseRight[j]==0 && clauseRightList[j][0]=='\'') {
 					temp = temp2+record[i][clauseLeft[j]]+temp2;
+					cout << "a " << record[i][clauseLeft[j]] << endl;
 					if (temp != clauseRightList[j]) {
 						flag = 1;
 						break;
@@ -2272,6 +2683,23 @@ void deleteFrom() {
 	for (int i=0; i<delList.size(); i++) 
 		rm->delete_record(fileID, atoi(delList[i].c_str()));
 	rm->print_all_record(); 
+}
+
+char orderBetween(char top, char now) {
+	if (now=='\0' && top =='\0') return '=';
+	if (now=='\0') return '>';
+	if ((top == '+' || top == '-') && (now == '*' || now == '/')) return '<';
+	if (top == '\0') return '<';
+	return '>';
+}
+
+string to_string(int a)
+{
+   ostringstream ostr;
+   ostr << a;
+   string astr = ostr.str();
+   //cout << astr <<endl;
+   return astr ;
 }
 
 void updateSet() {
@@ -2484,39 +2912,1024 @@ void updateSet() {
 		}
 		if (flag == 0) {
 			ans = "";
-			cout << exprValueList[0][0] << " " << set << endl;
-			if (exprValueList[0][0] == '\'' && exprOpList.size()>0) {
+			int flag1 = 0;
+			vector<string> tempexprValueList;
+			tempexprValueList.clear();
+			for (int k=0; k<exprValueList.size(); k++) {
+				if (exprValueList[k][0]!='\'' && (exprValueList[k][0]<'0' || exprValueList[k][0]>'9')) {//is a attrName
+					for (int k2=0; k2<attr.size(); k2++)	
+						if (attr[k2] == exprValueList[k]) {
+							flag1 = 1;
+							tempexprValueList.push_back(record[i][k2+1]);
+							if (type[k2] == 0) tempexprValueList[k] = temp2 + tempexprValueList[k] + temp2;
+							break;
+						}	
+					if (flag1 == 0)	{
+						printf("attrName error! \n");
+						return;
+					}		 
+				} else
+				tempexprValueList.push_back(exprValueList[k]);
+					
+			}
+			cout << tempexprValueList.size() << endl;
+			if (tempexprValueList[0][0] != '\'' && type[set]==0) {
 				printf("Operator error! \n");
 				return;
 			}
-			if (exprValueList[0][0] == '\'' && type[set]==1) {
-				printf("Operator error! \n");
-				return;
-			}
-			if (exprValueList[0][0] != '\'' && type[set]==0) {
-				printf("Operator error! \n");
-				return;
-			}
-			if (exprValueList[0][0] == '\'') {
+			if (tempexprValueList[0][0] == '\'' && exprOpList.size()==0 && type[set]==0) {
 				string tempa = "";
-				for (int k=1; k<exprValueList[0].length()-1; k++) tempa += exprValueList[0][k];
-				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << exprValueList[0] << endl;
-				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], exprValueList[0])) {
+				for (int k=1; k<tempexprValueList[0].length()-1; k++) tempa += tempexprValueList[0][k];
+				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << tempexprValueList[0] << endl;
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], tempexprValueList[0])) {
 					cout << "wrong update" << endl;
 				}
 				else {
 					cout << "success update" << endl;
 				}
-				rm->print_all_record();			
+				rm->print_all_record();	
+				return;		
+			} else
+			if (type[set]==1) {
+				for (int k=0; k<tempexprValueList.size(); k++)
+					if (tempexprValueList[k][0] == '\'') {
+						printf("type error! \n");
+						return;					
+					}				
+				stack<int> opnd;
+				stack<char> optr;
+				while( !opnd.empty() ) opnd.pop(); 
+				while( !optr.empty() ) optr.pop(); 
+				optr.push('\0');
+				int now=0,valuePos=0,opPos=0;
+				exprOpList.push_back('\0');
+				int pOpnd1, pOpnd2;
+				while (!optr.empty()) {
+
+					if (now==0) {
+						opnd.push(atoi(tempexprValueList[valuePos].c_str()));
+						valuePos++;
+						now = 1;
+						if (exprOpList[opPos] == '\0') now = 2; 
+					} else {
+						if (now!=2)now = 0;
+						switch (orderBetween(optr.top(), exprOpList[opPos])) {
+						case '<':
+							optr.push(exprOpList[opPos]); opPos++;
+	
+							break;
+						case '=':
+							optr.pop();		
+							break;
+						case '>':
+							now = 1; 
+							char op = optr.top();
+							optr.pop();
+							if (op=='+') {
+								pOpnd2 = opnd.top();
+								opnd.pop();
+								pOpnd1 = opnd.top();
+								opnd.pop();
+								opnd.push(pOpnd1+pOpnd2);
+							}
+							if (op=='-') {
+								pOpnd2 = opnd.top();
+								opnd.pop();
+								pOpnd1 = opnd.top();
+								opnd.pop();
+								opnd.push(pOpnd1-pOpnd2);
+							}
+							if (op=='*') {
+								pOpnd2 = opnd.top();
+								opnd.pop();
+								pOpnd1 = opnd.top();
+								opnd.pop();
+								opnd.push(pOpnd1*pOpnd2);
+							}
+							if (op=='/') {
+								pOpnd2 = opnd.top();
+								opnd.pop();
+								pOpnd1 = opnd.top();
+								opnd.pop();
+								opnd.push(pOpnd1/pOpnd2);
+							}
+							break;
+						}
+					}	
+				}
+				int ans = opnd.top();
+				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << to_string(ans) << endl;
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], to_string(ans))) {
+					cout << "wrong update" << endl;
+				}
+				else {
+					cout << "success update" << endl;
+				}
+				rm->print_all_record();	
 			}
+			
 		}	
 	}
 } 
 
+
 void selectFrom() {
-	cout << "selectFrom" << endl;
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	FileManager* fm[tbNameList.size()];
+	RecordManager* rm[tbNameList.size()];
+	int fileID[tbNameList.size()];
+	vector<vector<string> > record[tbNameList.size()];
+	vector<string> attr[tbNameList.size()];
+	vector<int> type[tbNameList.size()];
+	for (int i=0; i<tbNameList.size(); i++) {
+		string path = DB_ROOT+temp0+currentDb+temp0+tbNameList[i];
+		if((access(path.c_str(),F_OK)))
+		{
+			printf("table %s doesb't exist... \n", tbName.c_str());
+			return;
+		}
+		fm[i] = new FileManager();
+		fm[i]->openFile(path.c_str(), fileID[i]);
+		rm[i] = new RecordManager(fm[i]);
+		rm[i]->load_table_info(fileID[i]);
+		record[i] = rm[i]->get_all_record();
+		attr[i] = rm[i]->get_attr_name();
+		type[i] = rm[i]->get_attr_type();
+	}
+	
+	vector<int> clauseLeftAttr, clauseRightAttr;
+	vector<int> clauseLeft, clauseRight;
+	vector<int> ans, ansAttr;
+	clauseLeftAttr.clear();
+	clauseRightAttr.clear();
+	clauseLeft.clear();
+	clauseRight.clear();
+	ans.clear();
+	ansAttr.clear();
+	for (int i=0; i<clauseNameList.size();i++) {
+		int now=0;
+		while (clauseNameList[i][now] != '.' && now<clauseNameList[i].length()-1) now++;
+		if (now==clauseNameList[i].length()-1) {
+			printf("table name lost!");
+			return;
+		}
+		string temp = "";
+		for (int j=0; j<now; j++) temp += clauseNameList[i][j];
+		int now2=-1;
+		for (int j=0; j<tbNameList.size(); j++)
+			if (tbNameList[j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("table name doesn't exist!");
+			return;	
+		}
+		clauseLeft.push_back(now2);
+		temp = "";
+		for (int j=now+1; j<clauseNameList[i].length(); j++) temp += clauseNameList[i][j];
+		now2=-1;
+		for (int j=0; j<attr[clauseLeft[i]].size(); j++)
+			if (attr[clauseLeft[i]][j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("attr name doesn't exist!");
+			return;	
+		}
+		clauseLeftAttr.push_back(now2);
+	}
+        
+	for (int i=0; i<clauseRightList.size();i++) {
+		if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>'0' && clauseRightList[i][0]<'9')) {
+			clauseRight.push_back(-1);
+			clauseRightAttr.push_back(-1);
+			continue;
+		}
+		int now=0;
+		while (clauseRightList[i][now] != '.' && now<clauseRightList[i].length()-1) now++;
+		if (now==clauseRightList[i].length()-1) {
+			printf("table name lost!");
+			return;
+		}
+		string temp = "";
+		for (int j=0; j<now; j++) temp += clauseRightList[i][j];
+		int now2=-1;
+		for (int j=0; j<tbNameList.size(); j++)
+			if (tbNameList[j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("table name doesn't exist!");
+			return;	
+		}
+		clauseRight.push_back(now2);
+		temp = "";
+		for (int j=now+1; j<clauseRightList[i].length(); j++) temp += clauseRightList[i][j];
+		now2=-1;
+		for (int j=0; j<attr[clauseRight[i]].size(); j++)
+			if (attr[clauseRight[i]][j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("attr name doesn't exist!");
+			return;	
+		}
+		clauseRightAttr.push_back(now2);
+	}
+
+	for (int i=0; i<attrNameList.size();i++) {
+		int now=0;
+		while (attrNameList[i][now] != '.' && now<attrNameList[i].length()-1) now++;
+		if (now==attrNameList[i].length()-1) {
+			printf("table name lost!");
+			return;
+		}
+		string temp = "";
+		for (int j=0; j<now; j++) temp += attrNameList[i][j];
+		int now2=-1;
+		for (int j=0; j<tbNameList.size(); j++)
+			if (tbNameList[j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("table name doesn't exist!");
+			return;	
+		}
+		ans.push_back(now2);
+		temp = "";
+		for (int j=now+1; j<attrNameList[i].length(); j++) temp += attrNameList[i][j];
+		now2=-1;
+		for (int j=0; j<attr[ans[i]].size(); j++)
+			if (attr[ans[i]][j] == temp) {
+				now2 = j;
+				break;
+			}
+		if (now2==-1) {
+			printf("attr name doesn't exist!");
+			return;	
+		}
+		ansAttr.push_back(now2);
+	}        
+	
+	if (tbNameList.size() == 1) {
+		//cout << "start...  " << record[0].size() << endl;
+		for (int i=0; i<record[0].size(); i++) { 
+			int flag = 0;
+			string temp = "";
+			//cout << clauseOpList.size() << endl;
+			for (int j=0; j<clauseOpList.size(); j++) {
+				//cout << clauseLeftAttr.size() << " " << clauseRightAttr.size() << endl;	
+				//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+				if (clauseOpList[j] == "=") {
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
+						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+						//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
+						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
+						if (temp != clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				
+				}
+				if (clauseOpList[j] == ">") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) <= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) <= atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "<") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == ">=") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) < atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) < atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "<=") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) > atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) > atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "!=") {
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
+						if (record[0][i][clauseLeftAttr[j]+1] == record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						} 
+					} else
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
+						if (temp == clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (record[0][i][clauseLeftAttr[j]+1] == record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (record[0][i][clauseLeftAttr[j]+1] == clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+			}
+			if (flag == 0) {
+				cout << "ans: " << record[0][i][ansAttr[0]+1] << endl;
+			}
+		}
+	}
+	if (tbNameList.size() == 2) {
+		for (int i=0; i<record[0].size(); i++) {
+
+			for (int i2=0; i2<record[1].size(); i2++) { 
+				int flag = 0;
+				string temp = "";
+				//cout << clauseOpList.size() << endl;
+				for (int j=0; j<clauseOpList.size(); j++) {
+					cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;	
+					//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+					if (clauseOpList[j] == "=") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+							
+						if (tp1==0 && clauseRightAttr[j]>-1 && tp2==0) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (str1 != str2) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+							//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
+							if (clauseLeft[j]==0) temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2; else temp = temp2+record[1][i2][clauseLeftAttr[j]+1]+temp2;
+							if (temp != clauseRightList[j]) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+														
+							if (str1 != str2) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					
+					}
+					if (clauseOpList[j] == ">") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+						
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (atoi(str1.c_str()) <= atoi(str2.c_str())) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (atoi(temp.c_str()) <= atoi(clauseRightList[j].c_str())) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					}
+					if (clauseOpList[j] == "<") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+						
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (atoi(temp.c_str()) >= atoi(clauseRightList[j].c_str())) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					}
+					if (clauseOpList[j] == ">=") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+						
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (atoi(str1.c_str()) < atoi(str2.c_str())) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (atoi(temp.c_str()) < atoi(clauseRightList[j].c_str())) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					}
+					if (clauseOpList[j] == "<=") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (atoi(str1.c_str()) > atoi(str2.c_str())) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (atoi(temp.c_str()) > atoi(clauseRightList[j].c_str())) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					}
+					if (clauseOpList[j] == "!=") {
+						int tp1,tp2;
+						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
+						if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else tp2=type[1][clauseRightAttr[j]];
+						if (tp1==0 && clauseRightAttr[j]>-1 && tp2==0) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (str1 == str2) {
+								flag = 1;
+								break;
+							} 
+						} else
+						if (tp1==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (temp == clauseRightList[j]) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+							string str1="",str2="";										
+							if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else str1=record[1][i2][clauseLeftAttr[j]+1];
+							if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else str2=record[1][i2][clauseRightAttr[j]+1];
+							if (str1 == str2) {
+								flag = 1;
+								break;
+							}
+						} else
+						if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+							if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else temp = record[1][i2][clauseLeftAttr[j]+1];
+							if (temp == clauseRightList[j]) {
+								flag = 1;
+								break;
+							}
+						} else {
+							printf("compare error! \n");
+							return;
+						}
+					}
+				}
+				if (flag == 0) {
+					cout << "ans: ";
+					for (int p=0; p<ans.size(); p++)
+						if (ans[p]==0) cout << record[ans[p]][i][ansAttr[p]+1] << " "; else cout << record[ans[p]][i2][ansAttr[p]+1];
+					cout << endl;
+				}
+			}
+		}
+	} 
+	if (tbNameList.size() == 3) {
+		for (int i=0; i<record[0].size(); i++) {
+			for (int i2=0; i2<record[1].size(); i2++) { 
+				for (int i3=0; i3<record[2].size(); i3++) { 
+					int flag = 0;
+					string temp = "";
+					//cout << clauseOpList.size() << endl;
+					for (int j=0; j<clauseOpList.size(); j++) {
+						//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+						if (clauseOpList[j] == "=") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+								
+							if (tp1==0 && clauseRightAttr[j]>-1 && tp2==0) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (str1 != str2) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+								//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
+								if (clauseLeft[j]==0) temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2; else
+								if (clauseLeft[j]==1) temp = temp2+record[1][i2][clauseLeftAttr[j]+1]+temp2; else temp = temp2+record[2][i3][clauseLeftAttr[j]+1]+temp2;
+								if (temp != clauseRightList[j]) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+															
+								if (str1 != str2) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
+									flag = 1;
+									break;
+								}
+							} else {
+								printf("compare error! \n");
+								return;
+							}
+						
+						}
+						if (clauseOpList[j] == ">") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+							
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (atoi(str1.c_str()) <= atoi(str2.c_str())) {
+									flag = 1;
+									break;
+									}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (atoi(temp.c_str()) <= atoi(clauseRightList[j].c_str())) {
+									flag = 1;
+									break;
+								}
+							} else {
+								printf("compare error! \n");
+								return;
+							}
+						}
+						if (clauseOpList[j] == "<") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+							
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (atoi(temp.c_str()) >= atoi(clauseRightList[j].c_str())) {
+								flag = 1;
+								break;
+							}
+							} else {
+								printf("compare error! \n");
+								return;
+							}
+						}
+						if (clauseOpList[j] == ">=") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+							
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (atoi(str1.c_str()) < atoi(str2.c_str())) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (atoi(temp.c_str()) < atoi(clauseRightList[j].c_str())) {
+									flag = 1;
+									break;
+								}
+							} else {
+								printf("compare error! \n");
+								return;
+							}
+						}
+						if (clauseOpList[j] == "<=") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (atoi(str1.c_str()) > atoi(str2.c_str())) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (atoi(temp.c_str()) > atoi(clauseRightList[j].c_str())) {
+									flag = 1;
+									break;
+								}
+							} else {
+								printf("compare error! \n");
+								return;
+							}
+						}
+						if (clauseOpList[j] == "!=") {
+							int tp1,tp2;
+							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
+							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
+							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
+							if (tp1==0 && clauseRightAttr[j]>-1 && tp2==0) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (str1 == str2) {
+									flag = 1;
+									break;
+								} 
+							} else
+							if (tp1==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (temp == clauseRightList[j]) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
+								string str1="",str2="";										
+								if (clauseLeft[j]==0) str1=record[0][i][clauseLeftAttr[j]+1]; else 
+								if (clauseLeft[j]==1) str1=record[1][i2][clauseLeftAttr[j]+1]; else str1=record[2][i3][clauseLeftAttr[j]+1];
+								if (clauseRight[j]==0) str2=record[0][i][clauseRightAttr[j]+1]; else 
+								if (clauseRight[j]==1) str2=record[1][i2][clauseRightAttr[j]+1]; else str2=record[2][i3][clauseRightAttr[j]+1];
+								if (str1 == str2) {
+									flag = 1;
+									break;
+								}
+							} else
+							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
+								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+								if (temp == clauseRightList[j]) {
+									flag = 1;
+									break;
+								}
+								} else {
+								printf("compare error! \n");
+								return;
+							}
+						}
+					}
+					if (flag == 0) {
+						cout << "ans: ";
+						for (int p=0; p<ans.size(); p++)
+							if (ans[p]==0) cout << record[ans[p]][i][ansAttr[p]+1] << " "; else
+							if (ans[p]==1) cout << record[ans[p]][i2][ansAttr[p]+1] << " "; else
+								 cout << record[ans[p]][i3][ansAttr[p]+1];
+						cout << endl;
+					}
+				}
+			}
+		}                                                                                                                      
+	}
 }
 
+
+void select() {
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesn't exist... \n", tbName.c_str());
+		return;
+	}
+
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	
+	vector<vector<string> > record = rm->get_all_record();
+	
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();
+	int pos=-1;
+	for (int i=0; i<attr.size(); i++) 
+		if (attr[i] == attrName) {
+			pos = i;
+			break;
+		}
+	if (pos == -1) {
+		printf("attrName %s dosent exist... \n", attrName.c_str());
+		return;
+	}	
+	if (type[pos]==0) {
+		printf("Type error! \n");
+		return;
+	}
+	if (selectType == "SUM" || selectType == "sum") {
+		int ans = 0;
+		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
+		cout << "sum: " << ans << endl;
+		return;
+	}
+	if (selectType == "AVG" || selectType == "avg") {
+		int ans = 0;
+		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
+		ans/=record.size();
+		cout << "avg: " << ans << endl;
+		return;
+	}
+	if (selectType == "MAX" || selectType == "max") {
+		int ans = atoi(record[0][pos+1].c_str());
+		for (int i=1; i<record.size(); i++) 
+			if (atoi(record[i][pos+1].c_str()) > ans) ans = atoi(record[i][pos+1].c_str());
+		cout << "max: " << ans << endl;
+		return;
+	}
+	if (selectType == "MIN" || selectType == "min") {
+		int ans = atoi(record[0][pos+1].c_str());
+		for (int i=1; i<record.size(); i++) 
+			if (atoi(record[i][pos+1].c_str()) < ans) ans = atoi(record[i][pos+1].c_str());
+		cout << "min: " << ans << endl;
+		return;
+	}
+	printf("select type error! \n");
+	return;
+	
+	
+}
+
+void selectGroup() {
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesn't exist... \n", tbName.c_str());
+		return;
+	}
+
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	vector<vector<string> > record = rm->get_all_record();
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();	
+	if (attrName1 != attrName3) {
+		printf("group name error! \n");
+		return;	
+	}
+	int pos1 = -1, pos2 = -1;
+	for (int i=0; i<attr.size(); i++) {
+		if (attr[i] == attrName1) {
+			pos1 = i;
+		}
+		if (attr[i] == attrName2) {
+			pos2 = i;
+		}
+	}
+	if (pos1 == -1) {
+		printf("attrName %s dosent exist... \n", attrName1.c_str());
+		return;
+	}	
+	if (pos2 == -1) {
+		printf("attrName %s dosent exist... \n", attrName2.c_str());
+		return;
+	}	
+	if (type[pos2]==0) {
+		printf("Type error! \n");
+		return;
+	}
+	vector<string> name;
+	name.clear();
+	vector<int> ans;
+	vector<int> tim;
+	ans.clear();
+	for (int i=0; i<record.size(); i++) {
+		vector<string>::iterator iter = find(name.begin(), name.end(), record[i][pos1+1]);
+		if (iter == name.end()) {
+			name.push_back(record[i][pos1+1]);
+			ans.push_back(atoi(record[i][pos2+1].c_str()));
+			tim.push_back(1);
+		} else {
+			if (selectType == "SUM" || selectType == "sum") {
+				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
+			} else
+			if (selectType == "AVG" || selectType == "avg") {
+				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
+				tim[iter-name.begin()]++;
+			} else
+			if (selectType == "MAX" || selectType == "max") {
+				if (atoi(record[i][pos2+1].c_str())>ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
+			} else
+			if (selectType == "MIN" || selectType == "min") {
+				if (atoi(record[i][pos2+1].c_str())<ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
+			} else {
+				printf("select type error! \n");
+				return;
+			}
+		}
+	}
+	if (selectType == "AVG" || selectType == "avg") 
+		for (int i=0; i<ans.size(); i++) ans[i] /= tim[i];
+	cout << attrName1 << "   " << attrName2 << endl;
+	for (int i=0; i<name.size(); i++)
+		cout << name[i] << "  " << selectType << ": " << ans[i] << endl; 
+}
 
 void work() {
 	if (type == "create database") 	createDb();
@@ -2530,6 +3943,8 @@ void work() {
 	if (type == "delete from") 	deleteFrom();
 	if (type == "update set") 	updateSet();
 	if (type == "select from")	selectFrom();
+	if (type == "select")		select();
+	if (type == "select group")	selectGroup();
 }
 
 int make() {
@@ -2561,6 +3976,20 @@ int make() {
 	for (int j=now; j<primaryKey.length(); j++)
 		if (primaryKey[j] != ' ' && primaryKey[j] != ')') temp += primaryKey[j]; else break;
 	primaryKey = temp;
+
+	now = 0;
+	temp = "";
+	while (attrName[now]=='(' || attrName[now]==' ') now++;\
+	for (int k=now; k<attrName.length(); k++)
+		if (attrName[k] != ' ' && attrName[k] != ')') temp += attrName[k]; else break;
+	attrName = temp;
+	now = 0;
+	temp = "";
+	while (attrName2[now]=='(' || attrName2[now]==' ') now++;\
+	for (int k=now; k<attrName2.length(); k++)
+		if (attrName2[k] != ' ' && attrName2[k] != ')') temp += attrName2[k]; else break;
+	attrName2 = temp;
+		
 }
 
 int main()						
@@ -2573,6 +4002,7 @@ int main()
 		tbName = "";
 		setName = "";
 		attrNameList.clear();
+		nullList.clear();
  		tbNameList.clear();	
  		attrTypeList.clear();	
  		attrNumList.clear();	
@@ -2586,11 +4016,28 @@ int main()
 		while( yyparse()) {};
 	
 		make();
-		
-		
-		if (type != "") work();
-		
 		cout << "type: " << type << endl;	
+		cout << "selectType: " << selectType << endl; 	
+		cout << "tbName: " << tbName << endl;	
+		cout << "attrName1: " << attrName1 << endl;
+		cout << "attrName2: " << attrName2 << endl;	
+		cout << "attrName3: " << attrName3 << endl;	
+		/*vector<string>::iterator iter;
+		vector<int>::iterator iterInt;
+		vector<char>::iterator iterCh;
+		cout << "attrValueList:" << endl;
+		for (int i=0; i<attrValueList.size(); i++) {
+			cout << "tempList: ";
+			for (int j=0; j<attrValueList[i].size(); j++)
+				cout << attrValueList[i][j] << " ";
+			cout << endl;
+		} */
+
+		if (type != "") work();	
+		/*
+		cout << "type: " << type << endl;	
+		cout << "selectType: " << selectType << endl; 	
+		cout << "attrName: " << attrName << endl;
 		cout << "dbName: " << dbName << endl;	
 		cout << "tbName: " << tbName << endl;	
 		cout << "setName: " << setName << endl;	
@@ -2646,7 +4093,7 @@ int main()
 		for (iter=clauseRightList.begin();iter!=clauseRightList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;
-
+		*/
 	}	
 	return 0;
 }

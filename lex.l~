@@ -2,12 +2,7 @@
 
 #include "main.h"	
 #include "yacc.tab.h"
-#include <unistd.h>          //chdir()
-#include <sys/stat.h>        //mkdir()
-#include <sys/types.h>       //mkdir()
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>           //perror()
+
 extern "C"				
 {						
 	int yywrap(void);
@@ -34,14 +29,14 @@ from	 	(from|FROM)
 where	 	(where|WHERE)
 and	 	(and|AND)
 update	 	(update|UPDATE)
-set	 	(set|SET)
+set	 	(set|SET) 
 select	 	(select|SELECT)
 
 digit		([0-9])
 nondigit        ([_A-Za-z])  
 number		({digit}+)
 name		([A-Za-z~`!@#$%^&_.][0-9A-Za-z~`@#$%^&_.]*)
-string 		('[ 0-9A-Za-z~`@#$%^&_.()]*')
+string 		('[^']*')
 attrName	([(][ \f\r\t\v]*{name}[ \f\r\t\v]*[)])
 attrNum		([(][ \f\r\t\v]*{number}[ \f\r\t\v]*[)])
 blank_chars	([ \f\r\t\v]+)
@@ -94,6 +89,7 @@ blank_chars	([ \f\r\t\v]+)
 			yylval.m_sId=yytext;
 			return ATTRNUM;
 		}
+
 
 {string}	{
 			yylval.m_sId=yytext;

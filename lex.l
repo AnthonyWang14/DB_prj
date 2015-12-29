@@ -29,14 +29,16 @@ from	 	(from|FROM)
 where	 	(where|WHERE)
 and	 	(and|AND)
 update	 	(update|UPDATE)
-set	 	(set|SET)
+set	 	(set|SET) 
 select	 	(select|SELECT)
+group	 	(group|GROUP)
+by	 	(by|BY)
 
 digit		([0-9])
 nondigit        ([_A-Za-z])  
 number		({digit}+)
 name		([A-Za-z~`!@#$%^&_.][0-9A-Za-z~`@#$%^&_.]*)
-string 		('[ 0-9A-Za-z~`@#$%^&_.()]*')
+string 		('[^']*')
 attrName	([(][ \f\r\t\v]*{name}[ \f\r\t\v]*[)])
 attrNum		([(][ \f\r\t\v]*{number}[ \f\r\t\v]*[)])
 blank_chars	([ \f\r\t\v]+)
@@ -65,6 +67,8 @@ blank_chars	([ \f\r\t\v]+)
 {update}		{	return UPDATE;		}
 {set}			{	return SET;		}
 {select}		{	return SELECT;		}
+{group}			{	return GROUP;		}
+{by}			{	return BY;		}
 {blank_chars}		{  	return BLANK;		}				
 \n			{				}
 
@@ -89,6 +93,7 @@ blank_chars	([ \f\r\t\v]+)
 			yylval.m_sId=yytext;
 			return ATTRNUM;
 		}
+
 
 {string}	{
 			yylval.m_sId=yytext;

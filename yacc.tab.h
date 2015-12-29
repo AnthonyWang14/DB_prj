@@ -68,10 +68,12 @@ extern int yydebug;
     UPDATE = 278,
     SET = 279,
     SELECT = 280,
-    TABLE = 281,
-    BLANK = 282,
-    NOT = 283,
-    NUL = 284
+    GROUP = 281,
+    BY = 282,
+    TABLE = 283,
+    BLANK = 284,
+    NOT = 285,
+    NUL = 286
   };
 #endif
 
