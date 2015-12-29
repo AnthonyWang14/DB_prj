@@ -367,6 +367,34 @@ tokenlist:
 		YYACCEPT;
 	}
 //select tableName.attrName From tableName where whereclauses
+	| SELECT BLANK '*' BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($7);
+		type = "select from";
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK '*' BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($8);
+		type = "select from";
+		YYACCEPT;
+	}
+	| SELECT BLANK '*' BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($7);
+		type = "select from";
+		YYACCEPT;
+	}
+	| BLANK SELECT BLANK '*' BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($8);
+		type = "select from";
+		YYACCEPT;
+	}
 	| SELECT BLANK namelist BLANK FROM BLANK namelist1 BLANK WHERE BLANK whereclauses EXIT 
 	{
 		type = "select from";
@@ -625,56 +653,48 @@ tokenlist:
 //insert into [tableName(attrName1, attrName2,…, attrNameN)] VALUES (attrValue1, attrValue2,…, attrValueN) 
 	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
 	{
-		cout << 1 << endl;
 		tbName = $5;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT	
 	{
-		cout << 1 << endl;
 		tbName = $5;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 EXIT
 	{
-		cout << 1 << endl;
 		tbName = $6;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 EXIT
 	{
-		cout << 1 << endl;
 		tbName = $6;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
 	{
-		cout << 1 << endl;
 		tbName = $5;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
 	{
-		cout << 1 << endl;
 		tbName = $5;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES BLANK insertDetail0 BLANK EXIT
 	{
-		cout << 1 << endl;
 		tbName = $6;
 		type = "insert into";
 		YYACCEPT;
 	}
 	| BLANK INSERT BLANK INTO BLANK NAME BLANK VALUES insertDetail0 BLANK EXIT
 	{
-		cout << 1 << endl;
 		tbName = $6;
 		type = "insert into";
 		YYACCEPT;
@@ -687,6 +707,7 @@ insertDetail0:
 	{
 		tempList.push_back($1);
 		attrValueList.push_back(tempList);
+		tempList.clear();
 	}
 	| ATTRNUM
 	{
@@ -2446,39 +2467,6 @@ void showTb() {
 	printf("the work is not completed now \n");
 }
 
-void insertInto() {
-	if (currentDb == "") { 
-		printf("Plz choose a DB first... \n");
-		return;
-	}  
-	string temp0 = "/";
-	string temp1 = ".txt"; 
-	string temp2 = "'"; 
-	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
-	if((access(path.c_str(),F_OK)))
-	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
-		return;
-	} 
-	int fileID; 
-	FileManager* fm = new FileManager();
-	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
-	RecordManager* rm = new RecordManager(fm);
-	rm->load_table_info(fileID);
-	vector<string> newRecord;
-	int now = 0;
-	cout << attrValueList.size() << endl;
-	for (int i=0; i<attrValueList.size(); i++) { 
-		newRecord.clear();
-		for (int j=0; j<attrValueList[i].size(); j++) {
-			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
-				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
-			else newRecord.push_back(attrValueList[i][j]);
-		}
-		rm->insert_record(fileID, newRecord );
-	}
-	rm->print_all_record();
-}
 
 void deleteFrom() {
 	if (currentDb == "") {
@@ -3033,6 +3021,203 @@ void updateSet() {
 } 
 
 
+
+void select() {
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesn't exist... \n", tbName.c_str());
+		return;
+	}
+
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	
+	vector<vector<string> > record = rm->get_all_record();
+	
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();
+	int pos=-1;
+	for (int i=0; i<attr.size(); i++) 
+		if (attr[i] == attrName) {
+			pos = i;
+			break;
+		}
+	if (pos == -1) {
+		printf("attrName %s dosent exist... \n", attrName.c_str());
+		return;
+	}	
+	if (type[pos]==0) {
+		printf("Type error! \n");
+		return;
+	}
+	if (selectType == "SUM" || selectType == "sum") {
+		int ans = 0;
+		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
+		cout << "sum: " << ans << endl;
+		return;
+	}
+	if (selectType == "AVG" || selectType == "avg") {
+		int ans = 0;
+		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
+		ans/=record.size();
+		cout << "avg: " << ans << endl;
+		return;
+	}
+	if (selectType == "MAX" || selectType == "max") {
+		int ans = atoi(record[0][pos+1].c_str());
+		for (int i=1; i<record.size(); i++) 
+			if (atoi(record[i][pos+1].c_str()) > ans) ans = atoi(record[i][pos+1].c_str());
+		cout << "max: " << ans << endl;
+		return;
+	}
+	if (selectType == "MIN" || selectType == "min") {
+		int ans = atoi(record[0][pos+1].c_str());
+		for (int i=1; i<record.size(); i++) 
+			if (atoi(record[i][pos+1].c_str()) < ans) ans = atoi(record[i][pos+1].c_str());
+		cout << "min: " << ans << endl;
+		return;
+	}
+	printf("select type error! \n");
+	return;
+	
+	
+}
+
+void selectGroup() {
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string temp2 = "'";
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesn't exist... \n", tbName.c_str());
+		return;
+	}
+
+	int fileID;
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	vector<vector<string> > record = rm->get_all_record();
+	vector<string> attr = rm->get_attr_name();
+	vector<int> type = rm->get_attr_type();	
+	if (attrName1 != attrName3) {
+		printf("group name error! \n");
+		return;	
+	}
+	int pos1 = -1, pos2 = -1;
+	for (int i=0; i<attr.size(); i++) {
+		if (attr[i] == attrName1) {
+			pos1 = i;
+		}
+		if (attr[i] == attrName2) {
+			pos2 = i;
+		}
+	}
+	if (pos1 == -1) {
+		printf("attrName %s dosent exist... \n", attrName1.c_str());
+		return;
+	}	
+	if (pos2 == -1) {
+		printf("attrName %s dosent exist... \n", attrName2.c_str());
+		return;
+	}	
+	if (type[pos2]==0) {
+		printf("Type error! \n");
+		return;
+	}
+	vector<string> name;
+	name.clear();
+	vector<int> ans;
+	vector<int> tim;
+	ans.clear();
+	for (int i=0; i<record.size(); i++) {
+		vector<string>::iterator iter = find(name.begin(), name.end(), record[i][pos1+1]);
+		if (iter == name.end()) {
+			name.push_back(record[i][pos1+1]);
+			ans.push_back(atoi(record[i][pos2+1].c_str()));
+			tim.push_back(1);
+		} else {
+			if (selectType == "SUM" || selectType == "sum") {
+				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
+			} else
+			if (selectType == "AVG" || selectType == "avg") {
+				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
+				tim[iter-name.begin()]++;
+			} else
+			if (selectType == "MAX" || selectType == "max") {
+				if (atoi(record[i][pos2+1].c_str())>ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
+			} else
+			if (selectType == "MIN" || selectType == "min") {
+				if (atoi(record[i][pos2+1].c_str())<ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
+			} else {
+				printf("select type error! \n");
+				return;
+			}
+		}
+	}
+	if (selectType == "AVG" || selectType == "avg") 
+		for (int i=0; i<ans.size(); i++) ans[i] /= tim[i];
+	cout << attrName1 << "   " << attrName2 << endl;
+	for (int i=0; i<name.size(); i++) 
+		cout << name[i] << "  " << selectType << ": " << ans[i] << endl; 
+}
+
+
+void insertInto() {
+	if (currentDb == "") { 
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt"; 
+	string temp2 = "'"; 
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesb't exist... \n", tbName.c_str());
+		return;
+	} 
+	int fileID; 
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	vector<string> newRecord;
+	int now = 0;
+	cout << attrValueList.size() << endl;
+	for (int i=0; i<attrValueList.size(); i++) { 
+		newRecord.clear();
+		for (int j=0; j<attrValueList[i].size(); j++) {
+			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
+				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
+			else newRecord.push_back(attrValueList[i][j]);
+		}
+		rm->insert_record(fileID, newRecord );
+		//cout << i << endl;
+	}
+	//delete fm;
+	//delete rm;
+	rm->print_all_record();
+}
+
+
 void selectFrom() {
 	if (currentDb == "") {
 		printf("Plz choose a DB first... \n");
@@ -3108,7 +3293,7 @@ void selectFrom() {
 	}
         
 	for (int i=0; i<clauseRightList.size();i++) {
-		if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>'0' && clauseRightList[i][0]<'9')) {
+		if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
 			clauseRight.push_back(-1);
 			clauseRightAttr.push_back(-1);
 			continue;
@@ -3116,7 +3301,7 @@ void selectFrom() {
 		int now=0;
 		while (clauseRightList[i][now] != '.' && now<clauseRightList[i].length()-1) now++;
 		if (now==clauseRightList[i].length()-1) {
-			printf("table name lost!");
+			printf("table name lost1! \n");
 			return;
 		}
 		string temp = "";
@@ -3128,7 +3313,7 @@ void selectFrom() {
 				break;
 			}
 		if (now2==-1) {
-			printf("table name doesn't exist!");
+			printf("table name doesn't exist! \n");
 			return;	
 		}
 		clauseRight.push_back(now2);
@@ -3141,17 +3326,162 @@ void selectFrom() {
 				break;
 			}
 		if (now2==-1) {
-			printf("attr name doesn't exist!");
+			printf("attr name doesn't exist! \n");
 			return;	
 		}
 		clauseRightAttr.push_back(now2);
 	}
-
+	if (attrNameList.size() == 1 && attrNameList[0] == "*") {
+		for (int i=0; i<record[0].size(); i++) { 
+			int flag = 0;
+			string temp = "";
+			//cout << clauseOpList.size() << endl;
+			for (int j=0; j<clauseOpList.size(); j++) {
+				//cout << clauseLeftAttr.size() << " " << clauseRightAttr.size() << endl;	
+				//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+				if (clauseOpList[j] == "=") {
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
+						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+						//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
+						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
+						if (temp != clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				
+				}
+				if (clauseOpList[j] == ">") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) <= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) <= atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "<") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) >= atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == ">=") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) < atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) < atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "<=") {
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) > atoi(record[0][i][clauseRightAttr[j]+1].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (atoi(record[0][i][clauseLeftAttr[j]+1].c_str()) > atoi(clauseRightList[j].c_str())) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+				if (clauseOpList[j] == "!=") {
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
+						if (record[0][i][clauseLeftAttr[j]+1] == record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						} 
+					} else
+					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
+						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
+						if (temp == clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==1) {
+						if (record[0][i][clauseLeftAttr[j]+1] == record[0][i][clauseRightAttr[j]+1]) {
+							flag = 1;
+							break;
+						}
+					} else
+					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
+						if (record[0][i][clauseLeftAttr[j]+1] == clauseRightList[j]) {
+							flag = 1;
+							break;
+						}
+					} else {
+						printf("compare error! \n");
+						return;
+					}
+				}
+			}
+			if (flag == 0) {
+				for (int ii=0; ii<attr[0].size(); ii++) cout << record[0][i][ii+1] << "      ";
+				cout << endl;
+			}
+		}
+		return;
+	}
 	for (int i=0; i<attrNameList.size();i++) {
 		int now=0;
 		while (attrNameList[i][now] != '.' && now<attrNameList[i].length()-1) now++;
 		if (now==attrNameList[i].length()-1) {
-			printf("table name lost!");
+			printf("table name lost! \n");
 			return;
 		}
 		string temp = "";
@@ -3163,7 +3493,7 @@ void selectFrom() {
 				break;
 			}
 		if (now2==-1) {
-			printf("table name doesn't exist!");
+			printf("table name doesn't exist! \n");
 			return;	
 		}
 		ans.push_back(now2);
@@ -3176,7 +3506,7 @@ void selectFrom() {
 				break;
 			}
 		if (now2==-1) {
-			printf("attr name doesn't exist!");
+			printf("attr name doesn't exist! \n");
 			return;	
 		}
 		ansAttr.push_back(now2);
@@ -3580,7 +3910,7 @@ void selectFrom() {
 							} else
 							if (tp1==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
 								if (clauseLeft[j]==0) temp = record[0][i][clauseLeftAttr[j]+1]; else
-								if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
+						 		if (clauseLeft[j]==1) temp = record[1][i2][clauseLeftAttr[j]+1]; else temp = record[2][i3][clauseLeftAttr[j]+1];
 								if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
 									flag = 1;
 									break;
@@ -3595,7 +3925,7 @@ void selectFrom() {
 							int tp1,tp2;
 							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
 							if (clauseLeft[j]==1) tp1=type[1][clauseLeftAttr[j]]; else tp1=type[2][clauseLeftAttr[j]];
-							if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
+				 			if (clauseRight[j]==0) tp2=type[0][clauseRightAttr[j]]; else 
 							if (clauseRight[j]==1) tp2=type[1][clauseRightAttr[j]]; else tp2=type[2][clauseRightAttr[j]];
 							
 							if (tp1==1 && clauseRightAttr[j]>-1 && tp2==1) {
@@ -3774,162 +4104,6 @@ void selectFrom() {
 }
 
 
-void select() {
-	if (currentDb == "") {
-		printf("Plz choose a DB first... \n");
-		return;
-	}  
-	string temp0 = "/";
-	string temp1 = ".txt";
-	string temp2 = "'";
-	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
-	if((access(path.c_str(),F_OK)))
-	{
-		printf("table %s doesn't exist... \n", tbName.c_str());
-		return;
-	}
-
-	int fileID;
-	FileManager* fm = new FileManager();
-	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
-	RecordManager* rm = new RecordManager(fm);
-	rm->load_table_info(fileID);
-	
-	vector<vector<string> > record = rm->get_all_record();
-	
-	vector<string> attr = rm->get_attr_name();
-	vector<int> type = rm->get_attr_type();
-	int pos=-1;
-	for (int i=0; i<attr.size(); i++) 
-		if (attr[i] == attrName) {
-			pos = i;
-			break;
-		}
-	if (pos == -1) {
-		printf("attrName %s dosent exist... \n", attrName.c_str());
-		return;
-	}	
-	if (type[pos]==0) {
-		printf("Type error! \n");
-		return;
-	}
-	if (selectType == "SUM" || selectType == "sum") {
-		int ans = 0;
-		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
-		cout << "sum: " << ans << endl;
-		return;
-	}
-	if (selectType == "AVG" || selectType == "avg") {
-		int ans = 0;
-		for (int i=0; i<record.size(); i++) ans += atoi(record[i][pos+1].c_str());
-		ans/=record.size();
-		cout << "avg: " << ans << endl;
-		return;
-	}
-	if (selectType == "MAX" || selectType == "max") {
-		int ans = atoi(record[0][pos+1].c_str());
-		for (int i=1; i<record.size(); i++) 
-			if (atoi(record[i][pos+1].c_str()) > ans) ans = atoi(record[i][pos+1].c_str());
-		cout << "max: " << ans << endl;
-		return;
-	}
-	if (selectType == "MIN" || selectType == "min") {
-		int ans = atoi(record[0][pos+1].c_str());
-		for (int i=1; i<record.size(); i++) 
-			if (atoi(record[i][pos+1].c_str()) < ans) ans = atoi(record[i][pos+1].c_str());
-		cout << "min: " << ans << endl;
-		return;
-	}
-	printf("select type error! \n");
-	return;
-	
-	
-}
-
-void selectGroup() {
-	if (currentDb == "") {
-		printf("Plz choose a DB first... \n");
-		return;
-	}  
-	string temp0 = "/";
-	string temp1 = ".txt";
-	string temp2 = "'";
-	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
-	if((access(path.c_str(),F_OK)))
-	{
-		printf("table %s doesn't exist... \n", tbName.c_str());
-		return;
-	}
-
-	int fileID;
-	FileManager* fm = new FileManager();
-	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
-	RecordManager* rm = new RecordManager(fm);
-	rm->load_table_info(fileID);
-	vector<vector<string> > record = rm->get_all_record();
-	vector<string> attr = rm->get_attr_name();
-	vector<int> type = rm->get_attr_type();	
-	if (attrName1 != attrName3) {
-		printf("group name error! \n");
-		return;	
-	}
-	int pos1 = -1, pos2 = -1;
-	for (int i=0; i<attr.size(); i++) {
-		if (attr[i] == attrName1) {
-			pos1 = i;
-		}
-		if (attr[i] == attrName2) {
-			pos2 = i;
-		}
-	}
-	if (pos1 == -1) {
-		printf("attrName %s dosent exist... \n", attrName1.c_str());
-		return;
-	}	
-	if (pos2 == -1) {
-		printf("attrName %s dosent exist... \n", attrName2.c_str());
-		return;
-	}	
-	if (type[pos2]==0) {
-		printf("Type error! \n");
-		return;
-	}
-	vector<string> name;
-	name.clear();
-	vector<int> ans;
-	vector<int> tim;
-	ans.clear();
-	for (int i=0; i<record.size(); i++) {
-		vector<string>::iterator iter = find(name.begin(), name.end(), record[i][pos1+1]);
-		if (iter == name.end()) {
-			name.push_back(record[i][pos1+1]);
-			ans.push_back(atoi(record[i][pos2+1].c_str()));
-			tim.push_back(1);
-		} else {
-			if (selectType == "SUM" || selectType == "sum") {
-				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
-			} else
-			if (selectType == "AVG" || selectType == "avg") {
-				ans[iter-name.begin()] += atoi(record[i][pos2+1].c_str());
-				tim[iter-name.begin()]++;
-			} else
-			if (selectType == "MAX" || selectType == "max") {
-				if (atoi(record[i][pos2+1].c_str())>ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
-			} else
-			if (selectType == "MIN" || selectType == "min") {
-				if (atoi(record[i][pos2+1].c_str())<ans[iter-name.begin()]) ans[iter-name.begin()] = atoi(record[i][pos2+1].c_str());
-			} else {
-				printf("select type error! \n");
-				return;
-			}
-		}
-	}
-	if (selectType == "AVG" || selectType == "avg") 
-		for (int i=0; i<ans.size(); i++) ans[i] /= tim[i];
-	for (int i=0; i<name.size(); i++)
-		cout << name[i] << "  " << selectType << ": " << ans[i] << endl; 
-}
-
 void work() {
 	if (type == "create database") 	createDb();
 	if (type == "drop database")    dropDb();
@@ -3942,7 +4116,7 @@ void work() {
 	if (type == "delete from") 	deleteFrom();
 	if (type == "update set") 	updateSet();
 	if (type == "select from")	selectFrom();
-	if (type == "select")		select();
+	if (type == "select")		select(); 
 	if (type == "select group")	selectGroup();
 }
 
@@ -3978,13 +4152,13 @@ int make() {
 
 	now = 0;
 	temp = "";
-	while (attrName[now]=='(' || attrName[now]==' ') now++;\
+	while (attrName[now]=='(' || attrName[now]==' ') now++;
 	for (int k=now; k<attrName.length(); k++)
 		if (attrName[k] != ' ' && attrName[k] != ')') temp += attrName[k]; else break;
 	attrName = temp;
 	now = 0;
 	temp = "";
-	while (attrName2[now]=='(' || attrName2[now]==' ') now++;\
+	while (attrName2[now]=='(' || attrName2[now]==' ') now++;
 	for (int k=now; k<attrName2.length(); k++)
 		if (attrName2[k] != ' ' && attrName2[k] != ')') temp += attrName2[k]; else break;
 	attrName2 = temp;
@@ -4012,26 +4186,16 @@ int main()
 		clauseNameList.clear();
 		clauseOpList.clear();
 		clauseRightList.clear();
-		while( yyparse()) {};
-	
+		while( yyparse()) {
+			
+		}
 		make();
-		cout << "type: " << type << endl;	
-		cout << "selectType: " << selectType << endl; 	
-		cout << "tbName: " << tbName << endl;	
-		cout << "attrName1: " << attrName1 << endl;
-		cout << "attrName2: " << attrName2 << endl;	
-		cout << "attrName3: " << attrName3 << endl;	
 		/*vector<string>::iterator iter;
-		vector<int>::iterator iterInt;
-		vector<char>::iterator iterCh;
-		cout << "attrValueList:" << endl;
-		for (int i=0; i<attrValueList.size(); i++) {
-			cout << "tempList: ";
-			for (int j=0; j<attrValueList[i].size(); j++)
-				cout << attrValueList[i][j] << " ";
-			cout << endl;
-		} */
-
+		cout << "attrNameList:";  
+    		for (iter=attrNameList.begin();iter!=attrNameList.end();iter++)  
+        		cout << " " << *iter;   	
+		cout << endl;
+		*/
 		if (type != "") work();	
 		/*
 		cout << "type: " << type << endl;	

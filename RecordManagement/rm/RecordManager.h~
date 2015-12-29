@@ -211,6 +211,7 @@ public:
 		// 分int和varchar判断
 
 		// 对主键进行判断
+		int now = 0;
 	 	if (attr == primary_key) {
 	 		string w;
 	 		if (attr_types[attr] == 0) {
@@ -221,7 +222,8 @@ public:
 	 		}
 	 		for (int i = 0; i < all_record.size(); i++) {
 	 			if (all_record[i][attr+1] == w) {
-	 				cout << "主键重复" << endl;
+	 				cout << "主键重复 " << now << endl;
+					now++;
 	 				return 1;
 	 			}
 	 		}
@@ -252,6 +254,7 @@ public:
 	 			temp[i-1] = (char)record_attr[i];
 	 		}
 	 		temp[record_attr.length()-2] = '\0';
+			delete temp;
 	 		return 0;
 	 	}
 		// int
@@ -261,6 +264,7 @@ public:
 	 			temp[i] = int(record_attr[i]-'0');
 	 		}
 	 		temp[record_attr.length()] = -1;
+			//delete temp;
 	 		return 0;
 	 	}
 	 }
@@ -301,13 +305,13 @@ public:
 	 	BufType b = bufPageManager->allocPage(fileID, 0, index, true);
 		//每条记录长度
 	 	int recordLength   = b[0];
-		cout << "recordLength: " << recordLength << endl;
+		//cout << "recordLength: " << recordLength << endl;
 		//总页数
 	 	int pageNum        = b[1];
-		cout << "pageNum: " << pageNum << endl;
+		//cout << "pageNum: " << pageNum << endl;
 		//总共记录条数(包括已经删除的)
 	 	int recordNum = b[3];
-		cout << "RID: " << recordNum << endl;
+		//cout << "RID: " << recordNum << endl;
 
 		// //缓存了所有页面record条数
 		// BufType pageRecordNum;
@@ -331,7 +335,7 @@ public:
 		// 		// cout << endl;
 		// 	}
 		// }	
-		cout << page_record_num.size() << endl;
+		//cout << page_record_num.size() << endl;
 	 	for (int page_ID = 0; page_ID < page_record_num.size(); page_ID++) {
 	 		if (!page_record_num[page_ID]) continue;
 	 		int index_this;
@@ -528,6 +532,7 @@ public:
 		bufPageManager->markDirty(index2);
 		bufPageManager->markDirty(index3);
 		bufPageManager->close();
+		//delete bufPageManager;
 		update_all_record(fileID);
 		return 0;
 	}

@@ -211,6 +211,7 @@ public:
 		// 分int和varchar判断
 
 		// 对主键进行判断
+		int now = 0;
 	 	if (attr == primary_key) {
 	 		string w;
 	 		if (attr_types[attr] == 0) {
@@ -221,7 +222,8 @@ public:
 	 		}
 	 		for (int i = 0; i < all_record.size(); i++) {
 	 			if (all_record[i][attr+1] == w) {
-	 				cout << "主键重复" << endl;
+	 				cout << "主键重复 " << now << endl;
+					now++;
 	 				return 1;
 	 			}
 	 		}
@@ -252,6 +254,7 @@ public:
 	 			temp[i-1] = (char)record_attr[i];
 	 		}
 	 		temp[record_attr.length()-2] = '\0';
+			//delete temp;
 	 		return 0;
 	 	}
 		// int
@@ -261,6 +264,7 @@ public:
 	 			temp[i] = int(record_attr[i]-'0');
 	 		}
 	 		temp[record_attr.length()] = -1;
+			//delete temp;
 	 		return 0;
 	 	}
 	 }
@@ -528,6 +532,7 @@ public:
 		bufPageManager->markDirty(index2);
 		bufPageManager->markDirty(index3);
 		bufPageManager->close();
+		//delete bufPageManager;
 		update_all_record(fileID);
 		return 0;
 	}
