@@ -6878,7 +6878,7 @@ void selectFrom() {
 				}
 			}
 			if (flag == 0) {
-				for (int ii=0; ii<attr[0].size(); ii++) cout << record[0][i][ii+1] << " ";
+				for (int ii=0; ii<attr[0].size(); ii++) cout << record[0][i][ii+1] << "      ";
 				cout << endl;
 			}
 		}
