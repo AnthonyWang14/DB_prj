@@ -64,12 +64,15 @@ void test_insert_record() {
 	newRecord2.push_back("106002");
 	newRecord2.push_back("'CHAD CABELLO'");
 	newRecord2.push_back("'M'");
-	test->insert_record(fileID, newRecord2);
-	// test->insert_record(fileID, newRecord2);	
-	// for (int i = 0; i < 300; i++) {
+	test->insert_record(fileID, newRecord);	
+	test->insert_record(fileID, newRecord2);	
+
+	// for (int i = 0; i < 50000; i++) {
+	// 	if (i%100 == 0)
+	// 		cout << i << endl;
 	// 	test->insert_record(fileID, newRecord);
 	// }
-	// test->print_all_record();
+	test->print_all_record(fileID);
 }
 
 void test_delete_record() {
@@ -78,18 +81,27 @@ void test_delete_record() {
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 	RecordManager* test = new RecordManager(fm);
 	test->load_table_info(fileID);
-	vector<string> newRecord;
-	newRecord.push_back("106003");
+	vector<string> newRecord, newRecord2, newRecord3;
+
+	newRecord.push_back("106001");
 	newRecord.push_back("'CHAD CABELLO'");
 	newRecord.push_back("'F'");
-
-	test->delete_record(fileID, 1);
+	newRecord2.push_back("106002");
+	newRecord2.push_back("'CHAD CABELLO'");
+	newRecord2.push_back("'M'");
+	newRecord3.push_back("106001");
+	newRecord3.push_back("'CHAD CABELLO'");
+	newRecord3.push_back("'F'");
 	test->insert_record(fileID, newRecord);	
-
-	// for (int i = 0; i < 300; i++) {
+	test->insert_record(fileID, newRecord2);
+	test->print_all_record(fileID);
+	test->delete_record(fileID, 0);
+	test->insert_record(fileID, newRecord);	
+	test->print_all_record(fileID);
+	// for (int i = 0; i < 9000; i++) {
 	// 	test->insert_record(fileID, newRecord);
 	// }
-	test->print_all_record();
+	// test->print_all_record();
 }
 
 void test_update_record() {
@@ -98,8 +110,8 @@ void test_update_record() {
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 	RecordManager* test = new RecordManager(fm);
 	test->load_table_info(fileID);
-	test->print_all_record();
-	test->update_record(fileID, 0, "id", "1231231231");
+	test->print_all_record(fileID);
+	test->update_record(fileID, 0, "id", "106002");
 	test->update_record(fileID, 1, "name", "'wangsu'");
 	if (test->update_record(fileID, 2, "heheh", "21331312111")) {
 		cout << "wrong update" << endl;
@@ -107,7 +119,7 @@ void test_update_record() {
 	else {
 		cout << "success update" << endl;
 	}
-	test->print_all_record();
+	test->print_all_record(fileID);
 }
 
 void test_find_attr() {
@@ -129,11 +141,12 @@ void test_find_attr() {
 
 int main() {
 	test_create_table();
-	test_insert_record();
-	test_update_record();
+	// test_insert_record();
+	// test_update_record();
 	// test_update_record();
 	// test_find_attr();
-	// test_delete_record();
+	test_delete_record();
+	// test_insert_record();
 	// test_update_record();
 	// init();
 	// int fileID;

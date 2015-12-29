@@ -11,7 +11,6 @@
 #include <errno.h>           //perror()
 #include "SystemManagement/def.h"
 
-
  
 #include "RecordManagement/bufmanager/BufPageManager.h"
 #include "RecordManagement/fileio/FileManager.h"
@@ -2488,7 +2487,7 @@ void deleteFrom() {
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	
-	vector<vector<string> > record = rm->get_all_record();
+	vector<vector<string> > record = rm->get_all_record(fileID);
 	
 	vector<string> attr = rm->get_attr_name();
 	vector<int> type = rm->get_attr_type();
@@ -2669,7 +2668,7 @@ void deleteFrom() {
 	}
 	for (int i=0; i<delList.size(); i++) 
 		rm->delete_record(fileID, atoi(delList[i].c_str()));
-	rm->print_all_record(); 
+	rm->print_all_record(fileID); 
 }
 
 char orderBetween(char top, char now) {
@@ -2710,7 +2709,7 @@ void updateSet() {
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	
-	vector<vector<string> > record = rm->get_all_record();
+	vector<vector<string> > record = rm->get_all_record(fileID);
 	
 	vector<string> attr = rm->get_attr_name();
 	vector<int> type = rm->get_attr_type();
@@ -2934,7 +2933,7 @@ void updateSet() {
 				else {
 					cout << "success update" << endl;
 				}
-				rm->print_all_record();	
+				rm->print_all_record(fileID);	
 				return;		
 			} else
 			if (type[set]==1) {
@@ -3012,7 +3011,7 @@ void updateSet() {
 				else {
 					cout << "success update" << endl;
 				}
-				rm->print_all_record();	
+				rm->print_all_record(fileID);	
 			}
 			
 		}	
@@ -3042,7 +3041,7 @@ void select() {
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	
-	vector<vector<string> > record = rm->get_all_record();
+	vector<vector<string> > record = rm->get_all_record(fileID);
 	
 	vector<string> attr = rm->get_attr_name();
 	vector<int> type = rm->get_attr_type();
@@ -3113,7 +3112,7 @@ void selectGroup() {
 	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
-	vector<vector<string> > record = rm->get_all_record();
+	vector<vector<string> > record = rm->get_all_record(fileID);
 	vector<string> attr = rm->get_attr_name();
 	vector<int> type = rm->get_attr_type();	
 	if (attrName1 != attrName3) {
@@ -3201,10 +3200,9 @@ void insertInto() {
 	vector<string> newRecord;
 	int now = 0;
 	cout << attrValueList.size() << endl;
-	if (cnt%100==0) cout << cnt<<endl;
-	cnt++;
 	for (int i=0; i<attrValueList.size(); i++) { 
-		newRecord.clear();
+		if (cnt%100==0) cout << cnt<<endl;
+		cnt++;newRecord.clear();
 		for (int j=0; j<attrValueList[i].size(); j++) {
 			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
 				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
@@ -3215,7 +3213,7 @@ void insertInto() {
 	}
 	//delete fm;
 	//delete rm;
-	rm->print_all_record();
+	rm->print_all_record(fileID);
 }
 
 
@@ -3244,7 +3242,7 @@ void selectFrom() {
 		fm[i]->openFile(path.c_str(), fileID[i]);
 		rm[i] = new RecordManager(fm[i]);
 		rm[i]->load_table_info(fileID[i]);
-		record[i] = rm[i]->get_all_record();
+		record[i] = rm[i]->get_all_record(fileID[i]);
 		attr[i] = rm[i]->get_attr_name();
 		type[i] = rm[i]->get_attr_type();
 	}
@@ -4169,7 +4167,7 @@ int make() {
 int main()						
 {	
 	int i=0;
-	const char* sFile="book.sql";//打开要读取的文本文件  
+	/*const char* sFile="book.sql";//打开要读取的文本文件  
     	FILE* fp=fopen(sFile, "r");  
    	if(fp==NULL)  
     	{  
@@ -4177,8 +4175,10 @@ int main()
         	return -1;  
     	}  
    	 extern FILE* yyin;  //yyin和yyout都是FILE*类型  
-    	yyin=fp;//yacc会从yyin读取输入，yyin默认是标准输入，这里改为磁盘文件。yacc默认向yyout输出，可修改yyo //while(cin) {
-	//	cout << "  >> ";	
+    	yyin=fp;//yacc会从yyin读取输入，yyin默认是标准输入，这里改为磁盘文件。yacc默认向yyout输出，可修改yyo /
+    	*/
+    	while(1) {
+		cout << "  >> ";	
 		type = "";
 		dbName = "";
 		tbName = "";
@@ -4196,6 +4196,7 @@ int main()
 		clauseNameList.clear();
 		clauseOpList.clear();
 		clauseRightList.clear();
+		//yyparse();
 		while( yyparse()) {
 				
 		}
@@ -4267,8 +4268,8 @@ int main()
         		cout << " " << *iter;  
 		cout << endl;
 		*/
-	//}/
-    fclose(fp);	
+	}
+//fclose(fp);	
 	return 0;
 }
 
