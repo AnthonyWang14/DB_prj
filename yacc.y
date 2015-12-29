@@ -12,14 +12,14 @@
 #include "SystemManagement/def.h"
 
 
-
+ 
 #include "RecordManagement/bufmanager/BufPageManager.h"
 #include "RecordManagement/fileio/FileManager.h"
 #include "RecordManagement/rm/RecordManager.h"
 #include "RecordManagement/utils/pagedef.h"
 #include <map>
 #include <algorithm>
-
+int cnt;
 int a;
 string type;
 string dbName;
@@ -95,7 +95,6 @@ extern "C"
 %type<m_sId>tableDetail3
 %type<m_sId>insertDetail0
 %type<m_sId>insertDetail
-%type<m_sId>insertDetail2
 %type<m_sId>whereclauses
 %type<m_sId>namelist
 %type<m_sId>namelist1
@@ -2681,7 +2680,7 @@ char orderBetween(char top, char now) {
 	return '>';
 }
 
-string to_string(int a)
+string to_string_my(int a)
 {
    ostringstream ostr;
    ostr << a;
@@ -3006,8 +3005,8 @@ void updateSet() {
 					}	
 				}
 				int ans = opnd.top();
-				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << to_string(ans) << endl;
-				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], to_string(ans))) {
+				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << to_string_my(ans) << endl;
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], to_string_my(ans))) {
 					cout << "wrong update" << endl;
 				}
 				else {
@@ -3202,6 +3201,8 @@ void insertInto() {
 	vector<string> newRecord;
 	int now = 0;
 	cout << attrValueList.size() << endl;
+	if (cnt%100==0) cout << cnt<<endl;
+	cnt++;
 	for (int i=0; i<attrValueList.size(); i++) { 
 		newRecord.clear();
 		for (int j=0; j<attrValueList[i].size(); j++) {
@@ -3229,9 +3230,9 @@ void selectFrom() {
 	FileManager* fm[tbNameList.size()];
 	RecordManager* rm[tbNameList.size()];
 	int fileID[tbNameList.size()];
-	vector<vector<string> > record[tbNameList.size()];
-	vector<string> attr[tbNameList.size()];
-	vector<int> type[tbNameList.size()];
+	vector<vector<string> > * record = new vector<vector<string> >(tbNameList.size());
+	vector<string> * attr = new vector<string>(tbNameList.size());
+	vector<int>* type = new vector<int>(tbNameList.size());
 	for (int i=0; i<tbNameList.size(); i++) {
 		string path = DB_ROOT+temp0+currentDb+temp0+tbNameList[i];
 		if((access(path.c_str(),F_OK)))
@@ -4174,6 +4175,7 @@ int main()
 		dbName = "";
 		tbName = "";
 		setName = "";
+		cnt = 0;
 		attrNameList.clear();
 		nullList.clear();
  		tbNameList.clear();	
