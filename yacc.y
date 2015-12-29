@@ -4169,8 +4169,16 @@ int make() {
 int main()						
 {	
 	int i=0;
-	while(1) {
-		cout << "  >> ";	
+	const char* sFile="book.sql";//打开要读取的文本文件  
+    	FILE* fp=fopen(sFile, "r");  
+   	if(fp==NULL)  
+    	{  
+        	printf("cannot open %s\n", sFile);  
+        	return -1;  
+    	}  
+   	 extern FILE* yyin;  //yyin和yyout都是FILE*类型  
+    	yyin=fp;//yacc会从yyin读取输入，yyin默认是标准输入，这里改为磁盘文件。yacc默认向yyout输出，可修改yyo //while(cin) {
+	//	cout << "  >> ";	
 		type = "";
 		dbName = "";
 		tbName = "";
@@ -4189,7 +4197,7 @@ int main()
 		clauseOpList.clear();
 		clauseRightList.clear();
 		while( yyparse()) {
-			
+				
 		}
 		make();
 		/*vector<string>::iterator iter;
@@ -4259,7 +4267,8 @@ int main()
         		cout << " " << *iter;  
 		cout << endl;
 		*/
-	}	
+	//}/
+    fclose(fp);	
 	return 0;
 }
 
