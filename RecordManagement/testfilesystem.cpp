@@ -99,7 +99,7 @@ void test_delete_record() {
 	newRecord2.push_back("106002");
 	newRecord2.push_back("'CHAD CABELLO'");
 	newRecord2.push_back("'M'");
-	newRecord3.push_back("106001");
+	newRecord3.push_back("106003");
 	newRecord3.push_back("'CHAD CABELLO'");
 	newRecord3.push_back("'F'");
 	vector<int> nulls;
@@ -109,8 +109,10 @@ void test_delete_record() {
 
 	test->insert_record(fileID, newRecord, nulls);	
 	test->insert_record(fileID, newRecord2, nulls);
+	test->insert_record(fileID, newRecord3, nulls);
+
 	test->print_all_record(fileID);
-	test->delete_record(fileID, 1);
+	test->delete_record(fileID, 2);
 	test->insert_record(fileID, newRecord, nulls);	
 	test->print_all_record(fileID);
 	// for (int i = 0; i < 9000; i++) {

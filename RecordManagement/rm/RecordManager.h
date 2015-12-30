@@ -649,24 +649,6 @@ public:
 				if (RID == oneRecordPointer[0]) {   //找到符合RID的记录
 					//cout << "catch you!!" <<endl;
 					vector<string> test_rtn = get_one_record(oneRecordPointer);
-					// for (int k = 0; k < attr_key_index; k++)
-					// 	attrPointer += attr_pos[k];
-					// if (attr_key_index == primary_key) {
-					// 	string w;
-				 // 		if (attr_types[attr_key_index] == 0) {
-				 // 			w = attr_value.substr(1, attr_value.length()-2);
-				 // 		}
-				 // 		else {
-				 // 			w = attr_value;
-				 // 		}
-				 // 		for (int value = 0; value < primary_values.size(); value++) {
-				 // 			if (primary_values[value] == w) {
-				 // 				cout << "主键重复 " << w << endl;
-				 // 				return 1;
-				 // 			}
-				 // 		}
-				 // 		// 主键不重复则插入w并删除原来的值
-					// }
 					//有主键则处理主键
 					if (primary_key >= 0)
 						delete_primary_value(test_rtn[1+primary_key]);
