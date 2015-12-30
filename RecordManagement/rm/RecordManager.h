@@ -549,7 +549,6 @@ public:
 				break;
 			}
 		}
-		cout << "asdas" << endl;
 	}
 	int update_record(int fileID, int RID, string attr_key, string attr_value, int nulls) {
 		int attr_key_index = get_attr_key(attr_key);
@@ -708,3 +707,4 @@ public:
 };
 
 #endif
+>>>>>>> 7a1d1bd39457c180ef10369d662f8fbf03aff383

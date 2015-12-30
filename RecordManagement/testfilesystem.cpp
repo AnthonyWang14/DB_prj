@@ -110,7 +110,7 @@ void test_delete_record() {
 	test->insert_record(fileID, newRecord, nulls);	
 	test->insert_record(fileID, newRecord2, nulls);
 	test->print_all_record(fileID);
-	test->delete_record(fileID, 0);
+	test->delete_record(fileID, 1);
 	test->insert_record(fileID, newRecord, nulls);	
 	test->print_all_record(fileID);
 	// for (int i = 0; i < 9000; i++) {
