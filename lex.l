@@ -17,10 +17,12 @@ use     	(use|USE)
 show     	(show|SHOW)
 database 	(database|DATABASE)
 table 	 	(table|TABLE)
+tables 	 	(tables|TABLES)
 primary	 	(primary|PRIMARY)
 key	 	(key|KEY)
 not	 	(not|NOT)
 nul	 	(null|NULL)
+is	 	(is|IS)
 insert	 	(insert|INSERT)
 into	 	(into|INTO)
 values	 	(values|VALUES)
@@ -33,6 +35,7 @@ set	 	(set|SET)
 select	 	(select|SELECT)
 group	 	(group|GROUP)
 by	 	(by|BY)
+desc	 	(desc|DESC)
 
 digit		([0-9])
 nondigit        ([_A-Za-z])  
@@ -54,6 +57,7 @@ blank_chars	([ \f\r\t\v]+)
 {show}			{	return SHOW;		}
 {database}		{	return DATABASE;	}
 {table}			{	return TABLE;		}
+{tables}		{	return TABLES;		}
 {primary}		{	return PRIMARY;		}
 {key}			{	return KEY;		}
 {not}			{	return NOT;		}
@@ -70,6 +74,8 @@ blank_chars	([ \f\r\t\v]+)
 {select}		{	return SELECT;		}
 {group}			{	return GROUP;		}
 {by}			{	return BY;		}
+{is}			{	return IS;		}
+{desc}			{	return DESC;		}
 {blank_chars}		{  	return BLANK;		}				
 \n			{				}
 

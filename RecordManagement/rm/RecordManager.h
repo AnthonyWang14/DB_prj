@@ -100,7 +100,10 @@ public:
 	 	cout << "总页数 "		<< total_pages << endl;
 	 	cout << "每页记录个数 " 	<< record_per_page << endl;
 	 	cout << "RID(记录个数) "	<< RIDnumber << endl;
-	 	cout << "主键 "			<< str_vec[primary_key] << endl;
+	 	if (primary_key < 0) 
+	 		cout << "没有主键" << endl;
+	 	else 
+	 		cout << "主键 "			<< str_vec[primary_key] << endl;
 	 	cout << "属性个数" 		<< attr_num << endl;
 	 	for (int i = 0; i < attr_num; i++) {
 	 		cout << str_vec[i] << "\t";
@@ -314,7 +317,8 @@ public:
 	 			BufType oneRecordPointer = b2 + i * recordLength;
 	 			vector<string> test_rtn = get_one_record(oneRecordPointer);
 	 			all_record.push_back(test_rtn);
-	 			primary_values.push_back(test_rtn[1+primary_key]);
+	 			if (primary_key >= 0)
+	 				primary_values.push_back(test_rtn[1+primary_key]);
 	 		}
 	 	}
 	 	bufPageManager->close();
@@ -542,8 +546,10 @@ public:
 		for (it = primary_values.begin(); it!=primary_values.end(); it++) {
 			if (*it == w) {
 				primary_values.erase(it);
+				break;
 			}
 		}
+		cout << "asdas" << endl;
 	}
 	int update_record(int fileID, int RID, string attr_key, string attr_value, int nulls) {
 		int attr_key_index = get_attr_key(attr_key);
@@ -662,6 +668,7 @@ public:
 				 // 		}
 				 // 		// 主键不重复则插入w并删除原来的值
 					// }
+					//有主键则处理主键
 					if (primary_key >= 0)
 						delete_primary_value(test_rtn[1+primary_key]);
 
