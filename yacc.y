@@ -7,7 +7,8 @@
 #include <sys/stat.h>        //mkdir()
 #include <sys/types.h>       //mkdir()
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> 
+#include <string.h>
 #include <errno.h>           //perror()
 #include "SystemManagement/def.h"
 
@@ -85,10 +86,13 @@ extern "C"
 %token<m_sId>SELECT
 %token<m_sId>GROUP
 %token<m_sId>BY
+%token<m_sId>IS
+%token<m_sId>NUL
+%token<m_sId>DESC
 %token<m_sId>TABLE
+%token<m_sId>TABLES
 %token<m_sId>BLANK
 %token<m_sId>NOT
-%token<m_sId>NUL
 
 %type<m_sId>file
 %type<m_sId>tokenlist
@@ -101,6 +105,7 @@ extern "C"
 %type<m_sId>namelist
 %type<m_sId>namelist1
 %type<m_sId>expr
+%type<m_sId>now
 
 %%
 
@@ -191,54 +196,46 @@ tokenlist:
 		YYACCEPT;
 	}
 
-//show database dbName
-	| BLANK SHOW BLANK DATABASE BLANK NAME EXIT	
+//show database
+	| BLANK SHOW BLANK DATABASE EXIT	
 	{
-		dbName = $6;
 		type = "show database";
 		YYACCEPT;
 	}
-	| BLANK SHOW BLANK DATABASE BLANK NAME BLANK EXIT	
+	| BLANK SHOW BLANK DATABASE BLANK EXIT	
 	{
-		dbName = $6;
 		type = "show database";
 		YYACCEPT;
 	}
-	| SHOW BLANK DATABASE BLANK NAME EXIT
+	| SHOW BLANK DATABASE EXIT
 	{
-		dbName = $6;
 		type = "show database";
 		YYACCEPT;
 	}
-	| SHOW BLANK DATABASE BLANK NAME BLANK EXIT	
+	| SHOW BLANK DATABASE  BLANK EXIT	
 	{
-		dbName = $6;
 		type = "show database";
 		YYACCEPT;
 	}
 
-//show table tbName
-	| BLANK SHOW BLANK TABLE BLANK NAME EXIT	
+//show tables
+	| BLANK SHOW BLANK TABLES EXIT	
 	{
-		tbName = $6;
 		type = "show table";
 		YYACCEPT;
 	}
-	| BLANK SHOW BLANK TABLE BLANK NAME BLANK EXIT	
+	| BLANK SHOW BLANK TABLES BLANK EXIT	
 	{
-		tbName = $6;
 		type = "show table";
 		YYACCEPT;
 	}
-	| SHOW BLANK TABLE BLANK NAME EXIT
+	| SHOW BLANK TABLES EXIT
 	{
-		tbName = $5;
 		type = "show table";
 		YYACCEPT;
 	}
-	| SHOW BLANK TABLE BLANK NAME BLANK EXIT	
+	| SHOW BLANK TABLES BLANK EXIT	
 	{
-		tbName = $5;
 		type = "show table";
 		YYACCEPT;
 	}
@@ -269,6 +266,33 @@ tokenlist:
 		YYACCEPT;
 	}
 
+//desc tbName
+	| DESC BLANK NAME EXIT	
+	{
+		tbName = $3;
+		type = "desc";
+		YYACCEPT;
+	}
+	| DESC BLANK NAME BLANK EXIT	
+	{
+		tbName = $3;
+		type = "desc";
+		YYACCEPT;
+	}
+	| BLANK DESC BLANK NAME EXIT	
+	{
+		tbName = $4;
+		type = "desc";
+		YYACCEPT;
+	}
+	| BLANK DESC BLANK NAME BLANK EXIT	
+	{
+		tbName = $4;
+		type = "desc";
+		YYACCEPT;
+	}
+	
+
 //create table tbName(attrName1 Type1, ..., attrNameN TypeN NOT NULL, PRIMARY KEY(attrName1))
 	| BLANK CREATE BLANK TABLE BLANK NAME tableDetail EXIT	
 	{
@@ -280,33 +304,6 @@ tokenlist:
 	{
 		tbName = $5;
 		type = "create table";
-		YYACCEPT;
-	}
-
-
-//delete from tableName where whereclauses
-	| DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
-	{	
-		tbName = $5;
-		type = "delete from";
-		YYACCEPT;
-	}
-	| BLANK DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
-	{	
-		tbName = $6;
-		type = "delete from";
-		YYACCEPT;
-	}
-	| DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
-	{	
-		tbName = $5;
-		type = "delete from";
-		YYACCEPT;
-	}
-	| BLANK DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
-	{	
-		tbName = $6;
-		type = "delete from";
 		YYACCEPT;
 	}
 
@@ -419,6 +416,22 @@ tokenlist:
 
 
 //select SUM(attrName) From tableName
+	| SELECT BLANK '*' BLANK FROM BLANK NAME EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($7);
+		type = "select from";
+		YYACCEPT;
+		
+	}
+	| SELECT BLANK '*' BLANK FROM BLANK NAME BLANK EXIT
+	{
+		attrNameList.push_back("*");
+		tbNameList.push_back($7);
+		type = "select from";
+		YYACCEPT;
+		
+	}
 	| SELECT BLANK NAME ATTRNAME BLANK FROM BLANK NAME EXIT 
 	{
 		type = "select";
@@ -516,503 +529,45 @@ tokenlist:
 		tbName = $6;
 		type = "insert into";
 		YYACCEPT;
-	};
+	}
 
-insertDetail0:
-	{
-	}
-	| ATTRNAME
-	{
-		tempList.push_back($1);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| ATTRNUM
-	{
-		tempList.push_back($1);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK ATTRNUM
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| ATTRNUM BLANK
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK ATTRNUM BLANK
-	{
-		tempList.push_back($2);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| '(' insertDetail ')' BLANK
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| BLANK '(' insertDetail ')' BLANK
-	{ 
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}	
-	| insertDetail0 ',' ATTRNUM
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNUM
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' ATTRNUM BLANK
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNUM BLANK
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' ATTRNAME
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNAME
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' ATTRNAME BLANK
-	{
-		tempList.push_back($3);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK ATTRNAME BLANK
-	{
-		tempList.push_back($4);
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' '(' insertDetail ')' BLANK
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK '(' insertDetail ')'
-	{
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	| insertDetail0 ',' BLANK '(' insertDetail ')' BLANK
-	{ 
-		attrValueList.push_back(tempList);
-		tempList.clear();
-	}
-	
-	;
 
-insertDetail:
-	{
-	}
-	| NUMBER	
-	{
-		tempList.push_back($1);
-	}
-	| NUL	
-	{
-		tempList.push_back("NULL");
-	}
-	| STRING	
-	{
-		tempList.push_back($1);
-	}
-	| BLANK NUMBER	
-	{
-		tempList.push_back($2);
-	}
-	| BLANK NUL
-	{
-		tempList.push_back("NULL");
-	}
-	| BLANK STRING
-	{
-		tempList.push_back($2);
-	}
-	| insertDetail ',' STRING
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' NUL
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail ',' NUMBER
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' STRING BLANK
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' BLANK STRING
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' BLANK STRING BLANK
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' NUL BLANK
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail ',' BLANK NUL
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail ',' BLANK NUL BLANK
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail ',' NUMBER BLANK
-	{
-		tempList.push_back($3);
-	}
-	| insertDetail ',' BLANK NUMBER
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail ',' BLANK NUMBER BLANK
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail BLANK ',' STRING
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail BLANK ',' NUL
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail BLANK ',' NUMBER
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail BLANK ',' STRING BLANK
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail BLANK ',' BLANK STRING
-	{
-		tempList.push_back($5);
-	}
-	| insertDetail BLANK ',' BLANK STRING BLANK
-	{
-		tempList.push_back($5);
-	}
-	| insertDetail BLANK ',' NUL BLANK
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail BLANK ',' BLANK NUL
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail BLANK ',' BLANK NUL BLANK
-	{
-		tempList.push_back("NULL");
-	}
-	| insertDetail BLANK ',' NUMBER BLANK
-	{
-		tempList.push_back($4);
-	}
-	| insertDetail BLANK ',' BLANK NUMBER
-	{
-		tempList.push_back($5);
-	}
-	| insertDetail BLANK ',' BLANK NUMBER BLANK
-	{
-		tempList.push_back($5);
-	};
 
-namelist:
-	{
-	}
-	| NAME	
-	{
-		attrNameList.push_back($1);
-	}
-	| BLANK NAME
-	{
-		attrNameList.push_back($2);
-	}
-	| namelist ',' BLANK NAME
-	{
-		attrNameList.push_back($4);
-	}
-	| namelist BLANK ',' NAME
-	{
-		attrNameList.push_back($4);
-	}
-	| namelist BLANK ',' BLANK NAME
-	{
-		attrNameList.push_back($5);
-	}
-	| namelist ',' NAME
-	{
-		attrNameList.push_back($3);
-	};
-
-namelist1:
-	{
-	}
-	| NAME	
-	{
-		tbNameList.push_back($1);
-	}
-	| BLANK NAME
-	{
-		tbNameList.push_back($2);
-	}
-	| namelist1 ',' BLANK NAME
-	{
-		tbNameList.push_back($4);
-	}
-	| namelist1 BLANK ',' NAME
-	{
-		tbNameList.push_back($4);
-	}
-	| namelist1 BLANK ',' BLANK NAME
-	{
-		tbNameList.push_back($5);
-	}
-	| namelist1 ',' NAME
-	{
-		tbNameList.push_back($3);
-	};
-
-expr:
-	{
-	}
-	| STRING 
-	{
-		exprValueList.push_back($1);
-	}
-	| NUMBER
+//delete from tableName where whereclauses
+	| DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
 	{	
-		exprValueList.push_back($1);
+		tbName = $5;	
+		type = "delete from";
+		YYACCEPT;
 	}
-	| NAME
+	| BLANK DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses EXIT
 	{	
-		exprValueList.push_back($1);
+		tbName = $6;
+		type = "delete from";
+		YYACCEPT;
 	}
-	| BLANK STRING
-	{
-		exprValueList.push_back($2);
+	| DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
+	{	
+		tbName = $5;
+		type = "delete from";
+		YYACCEPT;
 	}
-	| BLANK NUMBER
-	{
-		exprValueList.push_back($2);
-	}
-	| BLANK NAME
-	{
-		exprValueList.push_back($2);
-	}
-	| expr '+' NUMBER
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($3);
-	}
-	| expr '-' NUMBER
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($3);
-	}
-	| expr '*' NUMBER
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($3);
-	}
-	| expr '/' NUMBER
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($3);
-	}
-	| expr '+' BLANK NUMBER
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($4);
-	}
-	| expr '-' BLANK NUMBER
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($4);
-	}
-	| expr '*' BLANK NUMBER
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($4);
-	}
-	| expr '/' BLANK NUMBER
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '+' NUMBER
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '-' NUMBER
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '*' NUMBER
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '/' NUMBER
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '+' BLANK NUMBER
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '-' BLANK NUMBER
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '*' BLANK NUMBER
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '/' BLANK NUMBER
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($5);
-	}
-
-	| expr '+' NAME
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($3);
-	}
-	| expr '-' NAME
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($3);
-	}
-	| expr '*' NAME
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($3);
-	}
-	| expr '/' NAME
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($3);
-	}
-	| expr '+' BLANK NAME
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($4);
-	}
-	| expr '-' BLANK NAME
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($4);
-	}
-	| expr '*' BLANK NAME
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($4);
-	}
-	| expr '/' BLANK NAME
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '+' NAME
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '-' NAME
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '*' NAME
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '/' NAME
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($4);
-	}
-	| expr BLANK '+' BLANK NAME
-	{
-		exprOpList.push_back('+');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '-' BLANK NAME
-	{
-		exprOpList.push_back('-');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '*' BLANK NAME
-	{
-		exprOpList.push_back('*');
-		exprValueList.push_back($5);
-	}
-	| expr BLANK '/' BLANK NAME
-	{
-		exprOpList.push_back('/');
-		exprValueList.push_back($5);
+	| BLANK DELETE BLANK FROM BLANK NAME BLANK WHERE BLANK whereclauses BLANK EXIT
+	{	
+		tbName = $6;
+		type = "delete from";
+		YYACCEPT;
 	};
 
 whereclauses:
 	{
+	}
+	| NAME BLANK IS BLANK NUL
+	{
+		cout << 1 << endl;
+		clauseNameList.push_back($1);
+		clauseOpList.push_back("is");
+		clauseRightList.push_back("''");
 	}
 	| NAME '=' STRING
 	{
@@ -1835,6 +1390,506 @@ whereclauses:
 		clauseNameList.push_back($5);
 		clauseOpList.push_back("!=");
 		clauseRightList.push_back($10);
+	}
+	| whereclauses BLANK AND BLANK NAME BLANK IS BLANK NUL
+	{
+		clauseNameList.push_back($5);
+		clauseOpList.push_back("is");
+		clauseRightList.push_back("''");
+	};
+
+
+insertDetail0:
+	{
+	}
+	| ATTRNAME
+	{
+		tempList.push_back($1);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| ATTRNUM
+	{
+		tempList.push_back($1);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK ATTRNUM
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| ATTRNUM BLANK
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK ATTRNUM BLANK
+	{
+		tempList.push_back($2);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| '(' insertDetail ')' BLANK
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| BLANK '(' insertDetail ')' BLANK
+	{ 
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}	
+	| insertDetail0 ',' ATTRNUM
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNUM
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNUM BLANK
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNUM BLANK
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNAME
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNAME
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' ATTRNAME BLANK
+	{
+		tempList.push_back($3);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK ATTRNAME BLANK
+	{
+		tempList.push_back($4);
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' '(' insertDetail ')' BLANK
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK '(' insertDetail ')'
+	{
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	| insertDetail0 ',' BLANK '(' insertDetail ')' BLANK
+	{ 
+		attrValueList.push_back(tempList);
+		tempList.clear();
+	}
+	
+	;
+
+insertDetail:
+	{
+	}
+	| NUMBER	
+	{
+		tempList.push_back($1);
+	}
+	| NUL	
+	{
+		tempList.push_back("NULL");
+	}
+	| STRING	
+	{
+		tempList.push_back($1);
+	}
+	| BLANK NUMBER	
+	{
+		tempList.push_back($2);
+	}
+	| BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| BLANK STRING
+	{
+		tempList.push_back($2);
+	}
+	| insertDetail ',' STRING
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' NUMBER
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' STRING BLANK
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' BLANK STRING
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' BLANK STRING BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' BLANK NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail ',' NUMBER BLANK
+	{
+		tempList.push_back($3);
+	}
+	| insertDetail ',' BLANK NUMBER
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail ',' BLANK NUMBER BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' STRING
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' NUMBER
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' STRING BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' BLANK STRING
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' BLANK STRING BLANK
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' BLANK NUL
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' BLANK NUL BLANK
+	{
+		tempList.push_back("NULL");
+	}
+	| insertDetail BLANK ',' NUMBER BLANK
+	{
+		tempList.push_back($4);
+	}
+	| insertDetail BLANK ',' BLANK NUMBER
+	{
+		tempList.push_back($5);
+	}
+	| insertDetail BLANK ',' BLANK NUMBER BLANK
+	{
+		tempList.push_back($5);
+	};
+
+namelist:
+	{
+	}
+	| NAME	
+	{
+		attrNameList.push_back($1);
+	}
+	| BLANK NAME
+	{
+		attrNameList.push_back($2);
+	}
+	| namelist ',' BLANK NAME
+	{
+		attrNameList.push_back($4);
+	}
+	| namelist BLANK ',' NAME
+	{
+		attrNameList.push_back($4);
+	}
+	| namelist BLANK ',' BLANK NAME
+	{
+		attrNameList.push_back($5);
+	}
+	| namelist ',' NAME
+	{
+		attrNameList.push_back($3);
+	};
+
+namelist1:
+	{
+	}
+	| NAME	
+	{
+		tbNameList.push_back($1);
+	}
+	| BLANK NAME
+	{
+		tbNameList.push_back($2);
+	}
+	| namelist1 ',' BLANK NAME
+	{
+		tbNameList.push_back($4);
+	}
+	| namelist1 BLANK ',' NAME
+	{
+		tbNameList.push_back($4);
+	}
+	| namelist1 BLANK ',' BLANK NAME
+	{
+		tbNameList.push_back($5);
+	}
+	| namelist1 ',' NAME
+	{
+		tbNameList.push_back($3);
+	};
+
+expr:
+	{
+	}
+	| STRING 
+	{
+		exprValueList.push_back($1);
+	}
+	| NUMBER
+	{	
+		exprValueList.push_back($1);
+	}
+	| NAME
+	{	
+		exprValueList.push_back($1);
+	}
+	| BLANK STRING
+	{
+		exprValueList.push_back($2);
+	}
+	| BLANK NUMBER
+	{
+		exprValueList.push_back($2);
+	}
+	| BLANK NAME
+	{
+		exprValueList.push_back($2);
+	}
+	| expr '+' NUMBER
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($3);
+	}
+	| expr '-' NUMBER
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($3);
+	}
+	| expr '*' NUMBER
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($3);
+	}
+	| expr '/' NUMBER
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($3);
+	}
+	| expr '+' BLANK NUMBER
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr '-' BLANK NUMBER
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr '*' BLANK NUMBER
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr '/' BLANK NUMBER
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' NUMBER
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '-' NUMBER
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '*' NUMBER
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '/' NUMBER
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' BLANK NUMBER
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '-' BLANK NUMBER
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '*' BLANK NUMBER
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '/' BLANK NUMBER
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($5);
+	}
+
+	| expr '+' NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($3);
+	}
+	| expr '-' NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($3);
+	}
+	| expr '*' NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($3);
+	}
+	| expr '/' NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($3);
+	}
+	| expr '+' BLANK NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr '-' BLANK NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr '*' BLANK NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr '/' BLANK NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '-' NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '*' NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '/' NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($4);
+	}
+	| expr BLANK '+' BLANK NAME
+	{
+		exprOpList.push_back('+');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '-' BLANK NAME
+	{
+		exprOpList.push_back('-');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '*' BLANK NAME
+	{
+		exprOpList.push_back('*');
+		exprValueList.push_back($5);
+	}
+	| expr BLANK '/' BLANK NAME
+	{
+		exprOpList.push_back('/');
+		exprValueList.push_back($5);
 	};
 
 
@@ -1855,6 +1910,9 @@ tableDetail2:
 	{
 	}
 	| tableDetail2 BLANK	
+	{
+	}
+	| tableDetail3	
 	{
 	}
 	| tableDetail3 ',' PRIMARY BLANK KEY ATTRNAME
@@ -2215,8 +2273,53 @@ void dropDb() {
 		printf("successfully drop database: %s \n",dbName.c_str());
 }
 
+void printdir(char *dir, int depth)
+{
+    	DIR *dp;
+    	struct dirent *entry;
+    	struct stat statbuf;
+   	if((dp = opendir(dir)) == NULL) {
+    		fprintf(stderr,"cannot open directory: %s\n", dir);
+        	return;
+    	}
+   	chdir(dir);
+    	while((entry = readdir(dp)) != NULL) {
+        	lstat(entry->d_name,&statbuf);
+        		if(S_ISDIR(statbuf.st_mode)) {
+           
+            		if(strcmp(".",entry->d_name) == 0 ||
+               		 	strcmp("..",entry->d_name) == 0)
+               		 	continue;
+           		printf("%*s%s/\n",depth,"",entry->d_name);
+           
+            		printdir(entry->d_name,depth+4);
+       		}
+       		else printf("%*s%s\n",depth,"",entry->d_name);
+  	}
+   	chdir("..");
+    	closedir(dp);
+}
+
 void showDb() {
-	printf("the work is not completed now \n");
+	printdir(DB_ROOT,0);
+}
+
+void dropTb() {
+	if (currentDb == "") {
+		printf("Plz choose a DB first... \n");
+		return;
+	}	
+	string temp0 = "/";	
+	string temp1 = "rm -rf ";
+	string path1 = DB_ROOT+temp0+currentDb+temp0+tbName;
+	string path = temp1 + DB_ROOT+temp0+currentDb+temp0+tbName;
+    	if ((access(path1.c_str(), F_OK)))
+	{
+		printf("table %s doesn't exist... \n", tbName.c_str());
+		return;
+	} 
+    	if (!system(path.c_str()))
+		printf("successfully drop table: %s \n",dbName.c_str());
 }
 
 void createTb() {
@@ -2243,46 +2346,36 @@ void createTb() {
 		int attr_num = attrNameList.size();
 		vector<string> attr_name;
 		int attr_len[attr_num*3]; // {1, 10, 1, 0, 25, 1, 0, 1, 1};
-		int primary_key = 0;
+		int primary_key = -1;
 		string temp0 = "\"";
 		for (int i=0; i<attr_num; i++) {
 			if (attrTypeList[i]=="INT"  || attrTypeList[i]=="int" )attr_len[i*3] = 1; else
 			if (attrTypeList[i]=="CHAR" || attrTypeList[i]=="char" )attr_len[i*3] = 0; else {
 				errorReport("Type error! \n");
-				cout << attrTypeList[i] << endl;
+				dropTb();
 				return;
 			}
 			attr_len[i*3+1] = atoi(attrNumList[i].c_str());
-			attr_len[i*3+2] = 1-attrNotNullList[i];
+			attr_len[i*3+2] = attrNotNullList[i];
 			string temp = temp0+attrNameList[i]+temp0;
 			attr_name.push_back(attrNameList[i]);
 			if (attrNameList[i] == primaryKey) primary_key = i;		
 		}
-		cout << primary_key << endl;
 		rm->init(fileID, attr_num, attr_len, primary_key, attr_name);
 	}
 }
 
-void dropTb() {
+
+void showTb() {
 	if (currentDb == "") {
 		printf("Plz choose a DB first... \n");
 		return;
-	}	
-	string temp0 = "/";	
-	string temp1 = "rm -rf ";
-	string path1 = DB_ROOT+temp0+currentDb+temp0+tbName;
-	string path = temp1 + DB_ROOT+temp0+currentDb+temp0+tbName;
-    	if ((access(path1.c_str(), F_OK)))
-	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
-		return;
-	} 
-    	if (!system(path.c_str()))
-		printf("successfully drop table: %s \n",dbName.c_str());
-}
-
-void showTb() {
-	printf("the work is not completed now \n");
+	}
+	string temp0 = "/";
+	string temp1 = ".txt";
+	string path = DB_ROOT+temp0+currentDb+temp0;
+	char * ch = (char*)path.c_str();
+	printdir(ch,0);
 }
 
 
@@ -2350,7 +2443,10 @@ void deleteFrom() {
 	string temp = "";
 	for (int i=0; i<record.size(); i++) { 
 		flag = 0;
-		for (int j=0; j<clauseOpList.size(); j++) {		
+		for (int j=0; j<clauseOpList.size(); j++) {	
+			if (clauseOpList[j] == "is") {
+				if (record[i][clauseLeft[j]] != "NULL") { flag = 1; break;} 
+			}			
 			if (clauseOpList[j] == "=") {
 				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
 					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
@@ -2486,6 +2582,7 @@ void deleteFrom() {
 			delList.push_back(record[i][0]);
 		}	
 	}
+	cout << endl;
 	for (int i=0; i<delList.size(); i++) 
 		rm->delete_record(fileID, atoi(delList[i].c_str()));
 	rm->print_all_record(fileID); 
@@ -2517,15 +2614,45 @@ void updateSet() {
 	string temp1 = ".txt";
 	string temp2 = "'";
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	string path2 = path;
 	if((access(path.c_str(),F_OK)))
 	{
 		printf("table %s doesb't exist... \n", tbName.c_str());
 		return;
 	}
+	string set1 = "", set2 = "";
+	int now = 0;
+	while (setName[now]!='_' && now < setName.length()-1) now++;
+	if (now!=setName.length()-1) {
+		for (int i=0; i<now; i++) set1 += setName[i];
+		for (int i=now+1; i<setName.length(); i++) set2 += setName[i];
+	}
+	path = DB_ROOT+temp0+currentDb+temp0+set1;
 
+	int ofileID;
+	FileManager* ofm = new FileManager();
+	RecordManager* orm;
+	
+	vector<vector<string> > orecord;
+	
+	vector<string> oattr; 
+	vector<int> otype; 
+	int okey = -1;
+	if(set1!="" && !(access(path.c_str(),F_OK)))
+	{
+		ofm->openFile(path.c_str(), ofileID);
+		orm = new RecordManager(ofm);
+		orm -> load_table_info(ofileID);
+		orecord = orm->get_all_record(ofileID);
+		oattr = orm->get_attr_name();
+		otype = orm->get_attr_type();
+		for (int i=0; i<oattr.size(); i++)
+			if (set2 == oattr[i]) { okey = i; break;} 
+	}
+	cout << "okey: " << okey << endl;
 	int fileID;
 	FileManager* fm = new FileManager();
-	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	fm->openFile(path2.c_str(), fileID); //打开文件，fileID是返回的文件id
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	
@@ -2538,12 +2665,14 @@ void updateSet() {
 	clauseRight.clear();
 	int flag;
 	for (int i=0; i<clauseNameList.size(); i++) {
+		
 		flag = 0;
-		for (int j=0; j<attr.size(); j++)
+		for (int j=0; j<attr.size(); j++) {
 			if (attr[j] == clauseNameList[i]) {
 				flag = j+1;
 				break;
 			}
+		}
 		if (flag == 0) {
 			printf("attrName %s doesn't exist.. \n", clauseNameList[i].c_str());
 			return;	
@@ -2577,7 +2706,6 @@ void updateSet() {
 			break;
 		}	
 	}
-	cout << "attr[set]: " << attr[set] << endl;
 	if (set == -1) {
 		printf("attrName %s doesn't exist.. \n", setName.c_str());
 		return;
@@ -2585,7 +2713,11 @@ void updateSet() {
 	string ans = "";
 	for (int i=0; i<record.size(); i++) { 
 		flag = 0;
-		for (int j=0; j<clauseOpList.size(); j++) {		
+		for (int j=0; j<clauseOpList.size(); j++) {
+			if (clauseOpList[j] == "is") {
+				if (record[i][clauseLeft[j]] != "NULL") { flag = 1; break;} 
+			}			
+					
 			if (clauseOpList[j] == "=") {
 				if (type[clauseLeft[j]-1]==0 && clauseRight[j]>0 && type[clauseRight[j]-1]==0) {
 					if (record[i][clauseLeft[j]] != record[i][clauseRight[j]]) {
@@ -2746,8 +2878,7 @@ void updateSet() {
 			if (tempexprValueList[0][0] == '\'' && exprOpList.size()==0 && type[set]==0) {
 				string tempa = "";
 				for (int k=1; k<tempexprValueList[0].length()-1; k++) tempa += tempexprValueList[0][k];
-				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << tempexprValueList[0] << endl;
-				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], tempexprValueList[0])) {
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], tempexprValueList[0],1)) {
 					cout << "wrong update" << endl;
 				}
 				else {
@@ -2824,8 +2955,14 @@ void updateSet() {
 					}	
 				}
 				int ans = opnd.top();
-				cout << fileID << " " << atoi(record[i][0].c_str()) << " " << attr[set] << " " << to_string_my(ans) << endl;
-				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], to_string_my(ans))) {
+				int flag2 = 0;
+				for (int j1=0; j1<orecord.size(); j1++)
+					if (orecord[j1][okey+1]==to_string_my(ans)) { flag2=1;break;}
+				if (flag2 == 0) {
+					cout << "out key error!" << endl;
+					return;
+				}
+				if (rm->update_record(fileID, atoi(record[i][0].c_str()), attr[set], to_string_my(ans),1)) {
 					cout << "wrong update" << endl;
 				}
 				else {
@@ -3018,23 +3155,29 @@ void insertInto() {
 	RecordManager* rm = new RecordManager(fm);
 	rm->load_table_info(fileID);
 	vector<string> newRecord;
+	vector<int> nulls;
 	int now = 0;
-	cout << attrValueList.size() << endl;
 	if (cnt%100==0) cout << cnt<<endl;
 	cnt++;
 	for (int i=0; i<attrValueList.size(); i++) { 
 		newRecord.clear();
+		nulls.clear();
 		for (int j=0; j<attrValueList[i].size(); j++) {
-			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL")
-				newRecord.push_back(temp2+attrValueList[i][j]+temp2);
-			else newRecord.push_back(attrValueList[i][j]);
+			if (attrValueList[i][j]=="null" || attrValueList[i][j]=="NULL") {
+				nulls.push_back(0);
+				if (type[j]==0) newRecord.push_back(temp2+attrValueList[i][j]+temp2); else newRecord.push_back("0");
+			}
+			else {
+				newRecord.push_back(attrValueList[i][j]);
+				nulls.push_back(1);			
+			}	
 		}
-		rm->insert_record(fileID, newRecord );
+		rm->insert_record(fileID, newRecord, nulls );
 		//cout << i << endl;
 	}
 	//delete fm;
 	//delete rm;
-	//rm->print_all_record(fileID);
+	rm->print_all_record(fileID);
 }
 
 
@@ -3052,13 +3195,11 @@ void selectFrom() {
 	vector<vector<string> > * record = new vector<vector<string> >[tbNameList.size()];
 	vector<string> * attr = new vector<string>[tbNameList.size()];
 	vector<int>* type = new vector<int>[tbNameList.size()];
-	cout << tbNameList.size() << endl;
 	for (int i=0; i<tbNameList.size(); i++) {
 		string path = DB_ROOT+temp0+currentDb+temp0+tbNameList[i];
-		cout << path << endl;
 		if((access(path.c_str(),F_OK)))
 		{
-			printf("table %s doesb't exist... \n", tbName.c_str());
+			printf("table %s doesn't exist... \n", tbName.c_str());
 			return;
 		}
 		fm[i] = new FileManager();
@@ -3080,88 +3221,132 @@ void selectFrom() {
 	clauseRight.clear();
 	ans.clear();
 	ansAttr.clear();
-	for (int i=0; i<clauseNameList.size();i++) {
-		int now=0;
-		while (clauseNameList[i][now] != '.' && now<clauseNameList[i].length()-1) now++;
-		if (now==clauseNameList[i].length()-1) {
-			printf("table name lost!");
-			return;
-		}
-		string temp = "";
-		for (int j=0; j<now; j++) temp += clauseNameList[i][j];
-		int now2=-1;
-		for (int j=0; j<tbNameList.size(); j++)
-			if (tbNameList[j] == temp) {
-				now2 = j;
-				break;
+	if (tbNameList.size() == 1) {
+		for (int i=0; i<clauseNameList.size();i++) {
+			int now;
+			string temp = "";
+			clauseLeft.push_back(0);
+			temp = clauseNameList[i];
+			now=-1;
+			for (int j=0; j<attr[clauseLeft[i]].size(); j++)
+				if (attr[clauseLeft[i]][j] == temp) {
+					now = j;
+					break;
+				}
+			if (now==-1) {
+				printf("attr name doesn't exist!");
+				return;	
 			}
-		if (now2==-1) {
-			printf("table name doesn't exist!");
-			return;	
+			clauseLeftAttr.push_back(now);
 		}
-		clauseLeft.push_back(now2);
-		temp = "";
-		for (int j=now+1; j<clauseNameList[i].length(); j++) temp += clauseNameList[i][j];
-		now2=-1;
-		for (int j=0; j<attr[clauseLeft[i]].size(); j++)
-			if (attr[clauseLeft[i]][j] == temp) {
-				now2 = j;
-				break;
+        	
+		for (int i=0; i<clauseRightList.size();i++) {
+			if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
+				clauseRight.push_back(-1);
+				clauseRightAttr.push_back(-1);
+				continue;
 			}
-		if (now2==-1) {
-			printf("attr name doesn't exist!");
-			return;	
-		}
-		clauseLeftAttr.push_back(now2);
-	}
-        
-	for (int i=0; i<clauseRightList.size();i++) {
-		if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
-			clauseRight.push_back(-1);
-			clauseRightAttr.push_back(-1);
-			continue;
-		}
-		int now=0;
-		while (clauseRightList[i][now] != '.' && now<clauseRightList[i].length()-1) now++;
-		if (now==clauseRightList[i].length()-1) {
-			printf("table name lost1! \n");
-			return;
-		}
-		string temp = "";
-		for (int j=0; j<now; j++) temp += clauseRightList[i][j];
-		int now2=-1;
-		for (int j=0; j<tbNameList.size(); j++)
-			if (tbNameList[j] == temp) {
-				now2 = j;
-				break;
+			int now=0;
+			clauseRight.push_back(0);
+			string temp = "";
+			temp = clauseRightList[i];
+			now=-1;
+			for (int j=0; j<attr[clauseRight[i]].size(); j++)
+				if (attr[clauseRight[i]][j] == temp) {
+					now = j;
+					break;
+				}
+			if (now==-1) {
+				printf("attr name doesn't exist! \n");
+				return;	
 			}
-		if (now2==-1) {
-			printf("table name doesn't exist! \n");
-			return;	
+			clauseRightAttr.push_back(now);
 		}
-		clauseRight.push_back(now2);
-		temp = "";
-		for (int j=now+1; j<clauseRightList[i].length(); j++) temp += clauseRightList[i][j];
-		now2=-1;
-		for (int j=0; j<attr[clauseRight[i]].size(); j++)
-			if (attr[clauseRight[i]][j] == temp) {
-				now2 = j;
-				break;
+	} else {
+		for (int i=0; i<clauseNameList.size();i++) {
+			int now=0;
+			while (clauseNameList[i][now] != '.' && now<clauseNameList[i].length()-1) now++;
+			if (now==clauseNameList[i].length()-1) {
+				printf("table name lost!");
+				return;
 			}
-		if (now2==-1) {
-			printf("attr name doesn't exist! \n");
-			return;	
+			string temp = "";
+			for (int j=0; j<now; j++) temp += clauseNameList[i][j];
+			int now2=-1;	
+			for (int j=0; j<tbNameList.size(); j++)
+				if (tbNameList[j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("table name doesn't exist!");
+				return;	
+			}
+			clauseLeft.push_back(now2);
+			temp = "";
+			for (int j=now+1; j<clauseNameList[i].length(); j++) temp += clauseNameList[i][j];
+			now2=-1;
+			for (int j=0; j<attr[clauseLeft[i]].size(); j++)
+				if (attr[clauseLeft[i]][j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("attr name doesn't exist!");
+				return;	
+			}
+			clauseLeftAttr.push_back(now2);
 		}
-		clauseRightAttr.push_back(now2);
+        	
+		for (int i=0; i<clauseRightList.size();i++) {
+			if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
+				clauseRight.push_back(-1);
+				clauseRightAttr.push_back(-1);
+				continue;
+			}
+			int now=0;
+			while (clauseRightList[i][now] != '.' && now<clauseRightList[i].length()-1) now++;
+			if (now==clauseRightList[i].length()-1) {
+				printf("table name lost1! \n");
+				return;
+			}
+			string temp = "";
+			for (int j=0; j<now; j++) temp += clauseRightList[i][j];
+			int now2=-1;
+			for (int j=0; j<tbNameList.size(); j++)
+				if (tbNameList[j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("table name doesn't exist! \n");
+				return;	
+				}
+			clauseRight.push_back(now2);
+			temp = "";
+			for (int j=now+1; j<clauseRightList[i].length(); j++) temp += clauseRightList[i][j];
+			now2=-1;
+			for (int j=0; j<attr[clauseRight[i]].size(); j++)
+				if (attr[clauseRight[i]][j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("attr name doesn't exist! \n");
+				return;	
+			}
+			clauseRightAttr.push_back(now2);
+		}
 	}
 	if (attrNameList.size() == 1 && attrNameList[0] == "*") {
 		for (int i=0; i<record[0].size(); i++) { 
 			int flag = 0;
 			string temp = "";
-			//cout << clauseOpList.size() << endl;
 			for (int j=0; j<clauseOpList.size(); j++) {
-				//cout << clauseLeftAttr.size() << " " << clauseRightAttr.size() << endl;	
-				//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+				if (clauseOpList[j] == "is") {
+					if (record[0][i][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+				}			
+			
 				if (clauseOpList[j] == "=") {
 					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
 						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
@@ -3170,7 +3355,6 @@ void selectFrom() {
 						}
 					} else
 					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
-						//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
 						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
 						if (temp != clauseRightList[j]) {
 							flag = 1;
@@ -3336,14 +3520,13 @@ void selectFrom() {
 	}        
 	
 	if (tbNameList.size() == 1) {
-		//cout << "start...  " << record[0].size() << endl;
 		for (int i=0; i<record[0].size(); i++) { 
 			int flag = 0;
 			string temp = "";
-			//cout << clauseOpList.size() << endl;
 			for (int j=0; j<clauseOpList.size(); j++) {
-				//cout << clauseLeftAttr.size() << " " << clauseRightAttr.size() << endl;	
-				//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+				if (clauseOpList[j] == "is") {
+					if (record[0][i][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+				}			
 				if (clauseOpList[j] == "=") {
 					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]>-1 && type[0][clauseRightAttr[j]]==0) {
 						if (record[0][i][clauseLeftAttr[j]+1] != record[0][i][clauseRightAttr[j]+1]) {
@@ -3352,7 +3535,6 @@ void selectFrom() {
 						}
 					} else
 					if (type[0][clauseLeftAttr[j]]==0 && clauseRightAttr[j]==-1 && clauseRightList[j][0]=='\'') {
-						//cout << clauseRightList[j] << " "<< record[0][i][clauseLeftAttr[j]+1] << endl;
 						temp = temp2+record[0][i][clauseLeftAttr[j]+1]+temp2;
 						if (temp != clauseRightList[j]) {
 							flag = 1;
@@ -3364,7 +3546,7 @@ void selectFrom() {
 							flag = 1;
 							break;
 						}
-					} else
+					} else 
 					if (type[0][clauseLeftAttr[j]]==1 && clauseRightAttr[j]==-1 && clauseRightList[j][0]!='\'') {
 						if (record[0][i][clauseLeftAttr[j]+1] != clauseRightList[j]) {
 							flag = 1;
@@ -3486,9 +3668,13 @@ void selectFrom() {
 			for (int i2=0; i2<record[1].size(); i2++) { 
 				int flag = 0;
 				string temp = "";
-				//cout << clauseOpList.size() << endl;
 				for (int j=0; j<clauseOpList.size(); j++) {
-					//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+					if (clauseOpList[j] == "is") {
+						if (clauseLeft[j]==0)
+							if (record[clauseLeft[j]][i][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+						if (clauseLeft[j]==1)
+							if (record[clauseLeft[j]][i2][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+					}			
 					if (clauseOpList[j] == "=") {
 						int tp1,tp2;
 						if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else tp1=type[1][clauseLeftAttr[j]];
@@ -3688,9 +3874,15 @@ void selectFrom() {
 				for (int i3=0; i3<record[2].size(); i3++) { 
 					int flag = 0;
 					string temp = "";
-					//cout << clauseOpList.size() << endl;
 					for (int j=0; j<clauseOpList.size(); j++) {
-						//cout << clauseLeftAttr[j] << " " << clauseRightAttr[j] << endl;
+						if (clauseOpList[j] == "is") {
+							if (clauseLeft[j]==0)
+								if (record[clauseLeft[j]][i][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+							if (clauseLeft[j]==1)
+								if (record[clauseLeft[j]][i2][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+							if (clauseLeft[j]==2)
+								if (record[clauseLeft[j]][i3][clauseLeftAttr[j]+1] != "NULL") { flag = 1; break;} 
+						}			
 						if (clauseOpList[j] == "=") {
 							int tp1,tp2;
 							if (clauseLeft[j]==0) tp1=type[0][clauseLeftAttr[j]]; else 
@@ -3926,6 +4118,29 @@ void selectFrom() {
 }
 
 
+void desc() {
+	if (currentDb == "") { 
+		printf("Plz choose a DB first... \n");
+		return;
+	}  
+	string temp0 = "/";
+	string temp1 = ".txt"; 
+	string temp2 = "'"; 
+	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
+	if((access(path.c_str(),F_OK)))
+	{
+		printf("table %s doesb't exist... \n", tbName.c_str());
+		return;
+	} 
+	int fileID; 
+	FileManager* fm = new FileManager();
+	fm->openFile(path.c_str(), fileID); //打开文件，fileID是返回的文件id
+	RecordManager* rm = new RecordManager(fm);
+	rm->load_table_info(fileID);
+	
+}
+
+
 void work() {
 	if (type == "create database") 	createDb();
 	if (type == "drop database")    dropDb();
@@ -3934,6 +4149,7 @@ void work() {
 	if (type == "create table") 	createTb();
 	if (type == "drop table") 	dropTb();
 	if (type == "show table") 	showTb();
+	if (type == "desc") 		desc();
 	if (type == "insert into") 	insertInto();
 	if (type == "delete from") 	deleteFrom();
 	if (type == "update set") 	updateSet();
@@ -3944,7 +4160,6 @@ void work() {
 
 int make() {
 	if (tempName != "") {
-		cout << tempName << endl;
 		int now = 0;
 		string temp = "";	
 		while (tempName[now]!=',') {
@@ -3952,7 +4167,6 @@ int make() {
 			now++;
 		}
 		attrName1 = temp;
-		cout << temp << endl;
 		temp = "";
 		now++;
 		while (tempName[now]!='(') {
@@ -3967,7 +4181,6 @@ int make() {
 			now++;
 		}
 		attrName2 = temp;
-		cout << temp << endl;
 	}
 	int now = 0;
 	string temp = "";	
@@ -4039,7 +4252,23 @@ int main()
 		clauseOpList.clear();
 		clauseRightList.clear();
 		while( yyparse()) {
-				
+			type = "";
+			dbName = "";
+			tbName = "";
+			setName = "";
+			cnt = 0;
+			attrNameList.clear();
+			nullList.clear();
+ 			tbNameList.clear();	
+ 			attrTypeList.clear();	
+ 			attrNumList.clear();	
+ 			attrNotNullList.clear();	
+ 			attrValueList.clear();	
+ 			exprValueList.clear();	
+ 			exprOpList.clear();	
+			clauseNameList.clear();
+			clauseOpList.clear();
+			clauseRightList.clear();	
 		}
 		make();
 		/*vector<string>::iterator iter;
@@ -4049,7 +4278,7 @@ int main()
 		cout << endl;
 		*/
 		if (type != "") work();	
-		cout << "type: " << type << endl;	
+		/*cout << "type: " << type << endl;	
 		cout << "selectType: " << selectType << endl; 	
 		cout << "attrName: " << attrName << endl;
 		cout << "attrName1: " << attrName1 << endl;
@@ -4110,7 +4339,7 @@ int main()
 		for (iter=clauseRightList.begin();iter!=clauseRightList.end();iter++)  
         		cout << " " << *iter;  
 		cout << endl;
-
+		*/
 	}
 	return 0;
 }
