@@ -317,7 +317,8 @@ public:
 	 			BufType oneRecordPointer = b2 + i * recordLength;
 	 			vector<string> test_rtn = get_one_record(oneRecordPointer);
 	 			all_record.push_back(test_rtn);
-	 			primary_values.push_back(test_rtn[1+primary_key]);
+	 			if (primary_key >= 0)
+	 				primary_values.push_back(test_rtn[1+primary_key]);
 	 		}
 	 	}
 	 	bufPageManager->close();
@@ -545,6 +546,7 @@ public:
 		for (it = primary_values.begin(); it!=primary_values.end(); it++) {
 			if (*it == w) {
 				primary_values.erase(it);
+				break;
 			}
 		}
 	}
