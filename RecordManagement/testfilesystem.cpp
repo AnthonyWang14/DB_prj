@@ -41,7 +41,7 @@ void test_create_table() {
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 	RecordManager* test = new RecordManager(fm);
 	int attr_num = 3;
-	int attr_len[9] = {1, 10, 1, 0, 25, 1, 0, 1, 1};
+	int attr_len[9] = {1, 10, 1, 0, 25, 0, 0, 1, 1};
 	int primary_key = 0;
 	vector<string> attr_name;
 	attr_name.push_back("id");
@@ -57,15 +57,25 @@ void test_insert_record() {
 	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
 	RecordManager* test = new RecordManager(fm);
 	test->load_table_info(fileID);
-	vector<string> newRecord, newRecord2;
+	vector<string> newRecord, newRecord2, newRecord3;
 	newRecord.push_back("106001");
 	newRecord.push_back("'CHAD CABELLO'");
 	newRecord.push_back("'F'");
 	newRecord2.push_back("106002");
 	newRecord2.push_back("'CHAD CABELLO'");
 	newRecord2.push_back("'M'");
-	test->insert_record(fileID, newRecord);	
-	test->insert_record(fileID, newRecord2);	
+	newRecord3.push_back("106003");
+	newRecord3.push_back("'CHAD CABELLO'");
+	newRecord3.push_back("'F'");
+	vector<int> nulls;
+	nulls.push_back(1);
+	nulls.push_back(0);
+	nulls.push_back(1);
+
+	test->insert_record(fileID, newRecord, nulls);	
+	test->insert_record(fileID, newRecord2, nulls);	
+	test->insert_record(fileID, newRecord3, nulls);	
+
 
 	// for (int i = 0; i < 50000; i++) {
 	// 	if (i%100 == 0)
@@ -92,11 +102,16 @@ void test_delete_record() {
 	newRecord3.push_back("106001");
 	newRecord3.push_back("'CHAD CABELLO'");
 	newRecord3.push_back("'F'");
-	test->insert_record(fileID, newRecord);	
-	test->insert_record(fileID, newRecord2);
+	vector<int> nulls;
+	nulls.push_back(1);
+	nulls.push_back(1);
+	nulls.push_back(1);
+
+	test->insert_record(fileID, newRecord, nulls);	
+	test->insert_record(fileID, newRecord2, nulls);
 	test->print_all_record(fileID);
 	test->delete_record(fileID, 0);
-	test->insert_record(fileID, newRecord);	
+	test->insert_record(fileID, newRecord, nulls);	
 	test->print_all_record(fileID);
 	// for (int i = 0; i < 9000; i++) {
 	// 	test->insert_record(fileID, newRecord);
@@ -111,9 +126,9 @@ void test_update_record() {
 	RecordManager* test = new RecordManager(fm);
 	test->load_table_info(fileID);
 	test->print_all_record(fileID);
-	test->update_record(fileID, 0, "id", "106002");
-	test->update_record(fileID, 1, "name", "'wangsu'");
-	if (test->update_record(fileID, 2, "heheh", "21331312111")) {
+	test->update_record(fileID, 0, "id", "106002", 0);
+	test->update_record(fileID, 1, "name", "'wangsu'", 1);
+	if (test->update_record(fileID, 2, "heheh", "21331312111", 1)) {
 		cout << "wrong update" << endl;
 	}
 	else {
