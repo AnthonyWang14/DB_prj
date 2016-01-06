@@ -512,6 +512,12 @@ public:
 			 		// 主键不重复则插入
 			 		primary_values.push_back(w);
 				}
+				if (str_vec[i] == "gender") {
+					if (newRecord[i]!= "'F'" && newRecord[i] != "'M'") {
+						cout << "域完整性约束错误" << endl;
+						return 1;
+					}
+				}
 				int result = write_attr(i, newRecord[i], oneRecordPointer);
 				if (result != 0)
 					return 1;
@@ -602,6 +608,12 @@ public:
 					 		delete_primary_value(test_rtn[1+primary_key]);
 						}
 						// 处理主键问题
+						if (str_vec[attr_key_index] == "gender") {
+							if (attr_value!= "'F'" && attr_value != "'M'") {
+								cout << "域完整性约束错误" << endl;
+								return 1;
+							}
+						}
 						int result = write_attr(attr_key_index, attr_value, attrPointer);
 						flag = 1;
 						if (result == 1) {
@@ -689,4 +701,3 @@ public:
 };
 
 #endif
->>>>>>> 7a1d1bd39457c180ef10369d662f8fbf03aff383

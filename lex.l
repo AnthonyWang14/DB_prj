@@ -42,6 +42,7 @@ nondigit        ([_A-Za-z])
 number		({digit}+)
 name		([A-Za-z~`!@#$%^&_.][0-9A-Za-z~`@#$%^&_.]*)
 string 		('[^']*')
+haha 		("CHECK (gender in('F','M'))")
 attrName	([(][ \f\r\t\v]*{name}[ \f\r\t\v]*[)])
 attrName2	({name},{name}{attrName})
 attrNum		([(][ \f\r\t\v]*{number}[ \f\r\t\v]*[)])
@@ -52,6 +53,7 @@ blank_chars	([ \f\r\t\v]+)
 [*/+-]			{	return *yytext;		}
 ;			{	return EXIT;		}
 {create}		{	return CREATE;		}
+{haha}			{	return HAHA;		}
 {drop}			{	return DROP;		}
 {use}			{	return USE;		}
 {show}			{	return SHOW;		}

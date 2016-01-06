@@ -13,7 +13,6 @@
 #include "SystemManagement/def.h"
 
 
- 
 #include "RecordManagement/bufmanager/BufPageManager.h"
 #include "RecordManagement/fileio/FileManager.h"
 #include "RecordManagement/rm/RecordManager.h"
@@ -33,7 +32,7 @@ string attrName3;
 string selectType; 
 string setName;
 string primaryKey;
-string currentDb = "orderDB";
+string currentDb;// = "orderDB";
 vector<string>  attrNameList;
 vector<string>  tbNameList;
 vector<string> 	attrTypeList;
@@ -68,6 +67,7 @@ extern "C"
 
 %token<m_sId>EXIT
 %token<m_sId>CREATE
+%token<m_sId>HAHA
 %token<m_sId>DROP
 %token<m_sId>USE
 %token<m_sId>SHOW
@@ -105,7 +105,6 @@ extern "C"
 %type<m_sId>namelist
 %type<m_sId>namelist1
 %type<m_sId>expr
-%type<m_sId>now
 
 %%
 
@@ -1930,6 +1929,24 @@ tableDetail2:
 	| tableDetail3 ',' BLANK PRIMARY BLANK KEY BLANK ATTRNAME
 	{
 	  	primaryKey = $8;
+	}
+
+
+	| tableDetail3 ',' HAHA ',' PRIMARY BLANK KEY ATTRNAME
+	{
+	  	primaryKey = $8;
+	}
+	| tableDetail3 ',' HAHA ',' PRIMARY BLANK KEY BLANK ATTRNAME
+	{
+	  	primaryKey = $9;
+	}
+	| tableDetail3 ','  HAHA ',' BLANK PRIMARY BLANK KEY ATTRNAME
+	{
+	  	primaryKey = $9;
+	}
+	| tableDetail3 ',' HAHA ',' BLANK PRIMARY BLANK KEY BLANK ATTRNAME
+	{
+	  	primaryKey = $10;
 	};
 
 tableDetail3:
@@ -2350,7 +2367,7 @@ void createTb() {
 		string temp0 = "\"";
 		for (int i=0; i<attr_num; i++) {
 			if (attrTypeList[i]=="INT"  || attrTypeList[i]=="int" )attr_len[i*3] = 1; else
-			if (attrTypeList[i]=="CHAR" || attrTypeList[i]=="char" )attr_len[i*3] = 0; else {
+			if (attrTypeList[i]=="VARCHAR" || attrTypeList[i]=="varchar" )attr_len[i*3] = 0; else {
 				errorReport("Type error! \n");
 				dropTb();
 				return;
@@ -2585,7 +2602,7 @@ void deleteFrom() {
 	cout << endl;
 	for (int i=0; i<delList.size(); i++) 
 		rm->delete_record(fileID, atoi(delList[i].c_str()));
-	rm->print_all_record(fileID); 
+	//rm->print_all_record(fileID); 
 }
 
 char orderBetween(char top, char now) {
@@ -2884,7 +2901,7 @@ void updateSet() {
 				else {
 					cout << "success update" << endl;
 				}
-				rm->print_all_record(fileID);	
+				//rm->print_all_record(fileID);	
 				return;		
 			} else
 			if (type[set]==1) {
@@ -2968,7 +2985,8 @@ void updateSet() {
 				else {
 					cout << "success update" << endl;
 				}
-				rm->print_all_record(fileID);	
+				//
+				//rm->print_all_record(fileID);	
 			}
 			
 		}	
@@ -3177,7 +3195,7 @@ void insertInto() {
 	}
 	//delete fm;
 	//delete rm;
-	rm->print_all_record(fileID);
+	//rm->print_all_record(fileID);
 }
 
 
@@ -3228,18 +3246,18 @@ void selectFrom() {
 			clauseLeft.push_back(0);
 			temp = clauseNameList[i];
 			now=-1;
-			for (int j=0; j<attr[clauseLeft[i]].size(); j++)
+			for (int j=0; j<attr[clauseLeft[i]].size(); j++) {
 				if (attr[clauseLeft[i]][j] == temp) {
 					now = j;
 					break;
 				}
+			}
 			if (now==-1) {
 				printf("attr name doesn't exist!");
 				return;	
 			}
 			clauseLeftAttr.push_back(now);
 		}
-        	
 		for (int i=0; i<clauseRightList.size();i++) {
 			if (clauseRightList[i][0]=='\'' || (clauseRightList[i][0]>='0' && clauseRightList[i][0]<='9')) {
 				clauseRight.push_back(-1);
@@ -3292,7 +3310,7 @@ void selectFrom() {
 					break;
 				}
 			if (now2==-1) {
-				printf("attr name doesn't exist!");
+				printf("attr name doesn't exist! \n");
 				return;	
 			}
 			clauseLeftAttr.push_back(now2);
@@ -3484,41 +3502,61 @@ void selectFrom() {
 		}
 		return;
 	}
-	for (int i=0; i<attrNameList.size();i++) {
-		int now=0;
-		while (attrNameList[i][now] != '.' && now<attrNameList[i].length()-1) now++;
-		if (now==attrNameList[i].length()-1) {
-			printf("table name lost! \n");
-			return;
-		}
-		string temp = "";
-		for (int j=0; j<now; j++) temp += attrNameList[i][j];
-		int now2=-1;
-		for (int j=0; j<tbNameList.size(); j++)
-			if (tbNameList[j] == temp) {
-				now2 = j;
-				break;
+	if (tbNameList.size() == 1) {
+		for (int i=0; i<attrNameList.size();i++) {
+			string temp = "";
+			temp = attrNameList[i];
+			ans.push_back(0);
+			int now2=-1;
+			for (int j=0; j<attr[ans[i]].size(); j++)
+				if (attr[ans[i]][j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("attr name doesn't exist1! \n");
+				return;	
 			}
-		if (now2==-1) {
-			printf("table name doesn't exist! \n");
-			return;	
-		}
-		ans.push_back(now2);
-		temp = "";
-		for (int j=now+1; j<attrNameList[i].length(); j++) temp += attrNameList[i][j];
-		now2=-1;
-		for (int j=0; j<attr[ans[i]].size(); j++)
-			if (attr[ans[i]][j] == temp) {
-				now2 = j;
-				break;
+			ansAttr.push_back(now2);
+		}	
+	} else {
+
+		for (int i=0; i<attrNameList.size();i++) {
+			int now=0;
+			while (attrNameList[i][now] != '.' && now<attrNameList[i].length()-1) now++;
+			if (now==attrNameList[i].length()-1) {
+				printf("table name lost! \n");
+				return;
 			}
-		if (now2==-1) {
-			printf("attr name doesn't exist! \n");
-			return;	
+			string temp = "";
+			for (int j=0; j<now; j++) temp += attrNameList[i][j];
+			int now2=-1;
+			for (int j=0; j<tbNameList.size(); j++)
+				if (tbNameList[j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("table name doesn't exist! \n");
+				return;	
+			}
+			ans.push_back(now2);
+			temp = "";
+			for (int j=now+1; j<attrNameList[i].length(); j++) temp += attrNameList[i][j];
+			now2=-1;
+			for (int j=0; j<attr[ans[i]].size(); j++)
+				if (attr[ans[i]][j] == temp) {
+					now2 = j;
+					break;
+				}
+			if (now2==-1) {
+				printf("attr name doesn't exist! \n");
+				return;	
+			}
+			ansAttr.push_back(now2);
 		}
-		ansAttr.push_back(now2);
 	}        
-	
+		
 	if (tbNameList.size() == 1) {
 		for (int i=0; i<record[0].size(); i++) { 
 			int flag = 0;
@@ -3869,9 +3907,11 @@ void selectFrom() {
 		}
 	} 
 	if (tbNameList.size() == 3) {
+		cout << record[0].size() << " " << record[1].size() << " " << record[2].size() << endl;
 		for (int i=0; i<record[0].size(); i++) {
-			for (int i2=0; i2<record[1].size(); i2++) { 
+			for (int i2=0; i2<record[1].size(); i2++) {
 				for (int i3=0; i3<record[2].size(); i3++) { 
+				//if (i3%10000==0) cout << "i3: " << i3 << endl; 
 					int flag = 0;
 					string temp = "";
 					for (int j=0; j<clauseOpList.size(); j++) {
@@ -4157,7 +4197,6 @@ void work() {
 	if (type == "select")		select(); 
 	if (type == "select group")	selectGroup();
 }
-
 int make() {
 	if (tempName != "") {
 		int now = 0;
