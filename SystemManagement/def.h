@@ -11,11 +11,10 @@
  */
 
 #define MAX_PATH 100
-#define DB_ROOT "/Users/anthony/DB_prj/database"
 #define CURRENTDB "currentDb.txt"
 #define ALLDB "allDb.txt"
 #define TABLELIST "tablelist.txt"
-
+#define MAXBUFSIZE 1000
 #endif
 
 

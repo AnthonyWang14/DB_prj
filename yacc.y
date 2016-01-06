@@ -22,6 +22,7 @@
 int cnt;
 int a;
 string type;
+char DB_ROOT[MAXBUFSIZE];
 string dbName;
 string tbName; 
 string attrName; 
@@ -2407,7 +2408,7 @@ void deleteFrom() {
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
 	if((access(path.c_str(),F_OK)))
 	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
+		printf("table %s doesn't exist... \n", tbName.c_str());
 		return;
 	}
 
@@ -2634,7 +2635,7 @@ void updateSet() {
 	string path2 = path;
 	if((access(path.c_str(),F_OK)))
 	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
+		printf("table %s doesn't exist... \n", tbName.c_str());
 		return;
 	}
 	string set1 = "", set2 = "";
@@ -3164,7 +3165,7 @@ void insertInto() {
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
 	if((access(path.c_str(),F_OK)))
 	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
+		printf("table %s doesn't exist... \n", tbName.c_str());
 		return;
 	} 
 	int fileID; 
@@ -4169,7 +4170,7 @@ void desc() {
 	string path = DB_ROOT+temp0+currentDb+temp0+tbName;
 	if((access(path.c_str(),F_OK)))
 	{
-		printf("table %s doesb't exist... \n", tbName.c_str());
+		printf("table %s doesn't exist... \n", tbName.c_str());
 		return;
 	} 
 	int fileID; 
@@ -4271,6 +4272,11 @@ int make() {
 
 int main()						
 {	
+	char buf[MAXBUFSIZE];
+	getcwd(buf, MAXBUFSIZE);
+	string tempdb(buf);
+	tempdb += "/database";
+	strcpy(DB_ROOT, tempdb.c_str());
 	while(1) {
 		cout << "  >> ";	
 		type = "";
@@ -4290,6 +4296,8 @@ int main()
 		clauseNameList.clear();
 		clauseOpList.clear();
 		clauseRightList.clear();
+		//DB_ROOT = tempdb.c_str();
+		//printf("%s", DB_ROOT);
 		while( yyparse()) {
 			type = "";
 			dbName = "";
@@ -4310,75 +4318,7 @@ int main()
 			clauseRightList.clear();	
 		}
 		make();
-		/*vector<string>::iterator iter;
-		cout << "attrNameList:";  
-    		for (iter=attrNameList.begin();iter!=attrNameList.end();iter++)  
-        		cout << " " << *iter;   	
-		cout << endl;
-		*/
 		if (type != "") work();	
-		/*cout << "type: " << type << endl;	
-		cout << "selectType: " << selectType << endl; 	
-		cout << "attrName: " << attrName << endl;
-		cout << "attrName1: " << attrName1 << endl;
-		cout << "attrName2: " << attrName2 << endl;
-		cout << "attrName3: " << attrName3 << endl;
-		cout << "dbName: " << dbName << endl;	
-		cout << "tbName: " << tbName << endl;	
-		cout << "setName: " << setName << endl;	
-		cout << "primaryKey: " << primaryKey << endl;	
-		vector<string>::iterator iter;
-		vector<int>::iterator iterInt;
-		vector<char>::iterator iterCh;
-		cout << "attrValueList:" << endl;
-		for (int i=0; i<attrValueList.size(); i++) {
-			cout << "tempList: ";
-			for (int j=0; j<attrValueList[i].size(); j++)
-				cout << attrValueList[i][j] << " ";
-			cout << endl;
-		} 
-
-		cout << "attrNameList:";  
-    		for (iter=attrNameList.begin();iter!=attrNameList.end();iter++)  
-        		cout << " " << *iter;   	
-		cout << endl;
-		cout << "tbNameList:";  
-		for (iter=tbNameList.begin();iter!=tbNameList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl; 
-		cout << "attrTypeList:";   
-		for (iter=attrTypeList.begin();iter!=attrTypeList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		cout << "attrNumList:";  
-		for (iter=attrNumList.begin();iter!=attrNumList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		cout << "attrNotNullList:";  
-		for (iterInt=attrNotNullList.begin();iterInt!=attrNotNullList.end();iterInt++)  
-        		cout << " " << *iterInt;  
-		cout << endl;
-		cout << "exprValueList:";  
-		for (iter=exprValueList.begin();iter!=exprValueList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		cout << "exprOpList:";  
-		for (iterCh=exprOpList.begin();iterCh!=exprOpList.end();iterCh++)  
-        		cout << " " << *iterCh;  
-		cout << endl;
-		cout << "clauseNameList:";  
-		for (iter=clauseNameList.begin();iter!=clauseNameList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		cout << "clauseOpList:";  
-		for (iter=clauseOpList.begin();iter!=clauseOpList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		cout << "clauseRightList:";  
-		for (iter=clauseRightList.begin();iter!=clauseRightList.end();iter++)  
-        		cout << " " << *iter;  
-		cout << endl;
-		*/
 	}
 	return 0;
 }
