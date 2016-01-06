@@ -12,7 +12,7 @@
 #include <errno.h>           //perror()
 #include "SystemManagement/def.h"
 
-
+ 
 #include "RecordManagement/bufmanager/BufPageManager.h"
 #include "RecordManagement/fileio/FileManager.h"
 #include "RecordManagement/rm/RecordManager.h"
@@ -2308,11 +2308,11 @@ void printdir(char *dir, int depth)
             		if(strcmp(".",entry->d_name) == 0 ||
                		 	strcmp("..",entry->d_name) == 0)
                		 	continue;
-           		printf("%*s%s/\n",depth,"",entry->d_name);
-           
+           		printf("%*s%s/\n",depth,"",entry->d_name); 
             		printdir(entry->d_name,depth+4);
        		}
-       		else printf("%*s%s\n",depth,"",entry->d_name);
+       		else 
+				if (entry->d_name[0]!='.') printf("%*s%s\n",depth,"",entry->d_name);
   	}
    	chdir("..");
     	closedir(dp);
